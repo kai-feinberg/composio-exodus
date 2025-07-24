@@ -32,7 +32,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
     if (streamPart.type === 'data-suggestion') {
       setMetadata((metadata) => {
         return {
-          suggestions: [...metadata.suggestions, streamPart.data],
+          suggestions: [...(metadata?.suggestions || []), streamPart.data],
         };
       });
     }
