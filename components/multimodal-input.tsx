@@ -45,6 +45,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedAgentId,
+  selectedChatModel,
   onAgentChange,
 }: {
   chatId: string;
@@ -60,6 +61,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedAgentId?: string;
+  selectedChatModel: string;
   onAgentChange: (agentId: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -118,21 +120,30 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    sendMessage({
-      role: 'user',
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: 'file' as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: 'text',
-          text: input,
+    sendMessage(
+      {
+        role: 'user',
+        parts: [
+          ...attachments.map((attachment) => ({
+            type: 'file' as const,
+            url: attachment.url,
+            name: attachment.name,
+            mediaType: attachment.contentType,
+          })),
+          {
+            type: 'text',
+            text: input,
+          },
+        ],
+      },
+      {
+        body: {
+          selectedChatModel: selectedChatModel,
+          selectedVisibilityType: selectedVisibilityType,
+          selectedAgentId: selectedAgentId,
         },
-      ],
-    });
+      },
+    );
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -151,6 +162,9 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
+    selectedVisibilityType,
+    selectedAgentId,
+    selectedChatModel,
   ]);
 
   const uploadFile = async (file: File) => {
@@ -248,6 +262,8 @@ function PureMultimodalInput({
             sendMessage={sendMessage}
             chatId={chatId}
             selectedVisibilityType={selectedVisibilityType}
+            selectedAgentId={selectedAgentId}
+            selectedChatModel={selectedChatModel}
           />
         )}
 
@@ -259,7 +275,6 @@ function PureMultimodalInput({
         onChange={handleFileChange}
         tabIndex={-1}
       />
-
 
       {(attachments.length > 0 || uploadQueue.length > 0) && (
         <div

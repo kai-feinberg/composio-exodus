@@ -11,12 +11,16 @@ interface SuggestedActionsProps {
   chatId: string;
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   selectedVisibilityType: VisibilityType;
+  selectedAgentId?: string;
+  selectedChatModel: string;
 }
 
 function PureSuggestedActions({
   chatId,
   sendMessage,
   selectedVisibilityType,
+  selectedAgentId,
+  selectedChatModel,
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
@@ -60,10 +64,19 @@ function PureSuggestedActions({
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
 
-              sendMessage({
-                role: 'user',
-                parts: [{ type: 'text', text: suggestedAction.action }],
-              });
+              sendMessage(
+                {
+                  role: 'user',
+                  parts: [{ type: 'text', text: suggestedAction.action }],
+                },
+                {
+                  body: {
+                    selectedChatModel: selectedChatModel,
+                    selectedVisibilityType: selectedVisibilityType,
+                    selectedAgentId: selectedAgentId,
+                  },
+                },
+              );
             }}
             className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >
@@ -83,6 +96,9 @@ export const SuggestedActions = memo(
   (prevProps, nextProps) => {
     if (prevProps.chatId !== nextProps.chatId) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
+      return false;
+    if (prevProps.selectedAgentId !== nextProps.selectedAgentId) return false;
+    if (prevProps.selectedChatModel !== nextProps.selectedChatModel)
       return false;
 
     return true;

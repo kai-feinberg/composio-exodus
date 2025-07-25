@@ -62,6 +62,15 @@ export function AgentSelector({
   const agents = data?.agents || [];
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) || agents[0];
 
+  // Ensure proper state synchronization when falling back to first agent
+  useEffect(() => {
+    // Only trigger fallback after data is loaded and component is initialized
+    if (data && isInitialized && agents.length > 0 && !selectedAgentId && selectedAgent && onAgentChange) {
+      console.log('🔄 AgentSelector: No agent selected, triggering fallback to first agent:', selectedAgent.id);
+      onAgentChange(selectedAgent.id);
+    }
+  }, [data, isInitialized, agents, selectedAgentId, selectedAgent, onAgentChange]);
+
   if (error) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -27,7 +27,7 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
-import { postRequestBodySchema, type PostRequestBody } from './schema';
+import { aiSdkRequestSchema, postRequestBodySchema } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
   createResumableStreamContext,
@@ -35,9 +35,7 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
-import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
-import type { VisibilityType } from '@/components/visibility-selector';
 
 export const maxDuration = 60;
 
@@ -64,36 +62,72 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
-  let requestBody: PostRequestBody;
-
+  let json: any;
   try {
-    const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+    json = await request.json();
+    console.log('🔍 Raw request body:', JSON.stringify(json, null, 2));
+    console.log('🔍 Request body keys:', Object.keys(json));
+    console.log(
+      '🔍 Request body types:',
+      Object.fromEntries(
+        Object.entries(json).map(([key, value]) => [key, typeof value]),
+      ),
+    );
+    console.log('🔍 selectedAgentId value:', json.selectedAgentId);
+    console.log('🔍 selectedAgentId type:', typeof json.selectedAgentId);
+  } catch (error) {
+    console.error(
+      '❌ Failed to parse JSON:',
+      error instanceof Error ? error.message : String(error),
+    );
     return new ChatSDKError('bad_request:api').toResponse();
+  }
+
+  // Try AI SDK v2 schema first, then fall back to legacy
+  let requestData: any;
+  let message: any;
+
+  const aiSdkResult = aiSdkRequestSchema.safeParse(json);
+  if (aiSdkResult.success) {
+    console.log('✅ AI SDK v2 schema validation passed');
+    requestData = aiSdkResult.data;
+    message = requestData.messages.at(-1); // Get the latest message
+  } else {
+    // Try legacy schema
+    const legacyResult = postRequestBodySchema.safeParse(json);
+    if (legacyResult.success) {
+      console.log('✅ Legacy schema validation passed');
+      requestData = legacyResult.data;
+      message = requestData.message;
+    } else {
+      console.error('❌ Both schema validations failed:', {
+        aiSdkErrors: aiSdkResult.error.format(),
+        legacyErrors: legacyResult.error.format(),
+        receivedData: JSON.stringify(json, null, 2),
+      });
+      return new ChatSDKError('bad_request:api').toResponse();
+    }
   }
 
   try {
     const {
       id,
-      message,
-      selectedChatModel,
-      selectedVisibilityType,
+      selectedChatModel = 'chat-model', // Default value
+      selectedVisibilityType = 'private', // Default value
       selectedAgentId,
-    }: {
-      id: string;
-      message: ChatMessage;
-      selectedChatModel: ChatModel['id'];
-      selectedVisibilityType: VisibilityType;
-      selectedAgentId?: string;
-    } = requestBody;
+    } = requestData;
 
     console.log('🔍 API Request received:', {
       chatId: id,
       selectedChatModel,
+      selectedVisibilityType,
       selectedAgentId,
       hasMessage: !!message,
-      messagePreview: message?.parts?.[0]?.type === 'text' ? message.parts[0].text.slice(0, 50) + '...' : 'non-text'
+      messagePreview:
+        message?.parts?.[0]?.type === 'text'
+          ? `${message.parts[0].text.slice(0, 50)}...`
+          : 'non-text',
+      rawRequestKeys: Object.keys(requestData),
     });
 
     const session = await auth();
@@ -160,23 +194,32 @@ export async function POST(request: Request) {
           sessionUserId: session.user.id,
           userMatch: agent?.userId === session.user.id,
           modelId: agent?.modelId,
-          systemPromptLength: agent?.systemPrompt?.length
+          systemPromptLength: agent?.systemPrompt?.length,
         });
-        
-        if (agent && agent.userId === session.user.id) {
+
+        if (!agent) {
+          console.warn('❌ Agent not found in database:', selectedAgentId);
+        } else if (agent.userId !== session.user.id) {
+          console.warn('❌ Agent belongs to different user:', {
+            agentUserId: agent.userId,
+            sessionUserId: session.user.id,
+          });
+        } else {
           agentSystemPrompt = agent.systemPrompt;
           effectiveChatModel = agent.modelId as ChatModel['id'];
           console.log('✅ Agent configuration applied:', {
             agentName: agent.name,
             effectiveChatModel,
-            systemPromptPreview: agentSystemPrompt.slice(0, 100) + '...'
+            systemPromptPreview: `${agentSystemPrompt.slice(0, 100)}...`,
           });
-        } else {
-          console.warn('❌ Agent not applied - user mismatch or not found');
         }
       } catch (error) {
         // Agent not found or error - continue with default behavior
-        console.warn('❌ Agent retrieval error:', error);
+        console.error('❌ Agent retrieval error:', {
+          selectedAgentId,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
       }
     } else {
       console.log('🤖 No agent selected, using default configuration');
@@ -200,18 +243,20 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
-        const finalSystemPrompt = systemPrompt({ 
-          selectedChatModel: effectiveChatModel, 
+        const finalSystemPrompt = systemPrompt({
+          selectedChatModel: effectiveChatModel,
           requestHints,
-          agentSystemPrompt 
+          agentSystemPrompt,
         });
 
         console.log('📝 Final system prompt configuration:', {
           effectiveChatModel,
           hasAgentPrompt: !!agentSystemPrompt,
-          agentPromptPreview: agentSystemPrompt ? agentSystemPrompt.slice(0, 100) + '...' : 'none',
+          agentPromptPreview: agentSystemPrompt
+            ? `${agentSystemPrompt.slice(0, 100)}...`
+            : 'none',
           finalPromptLength: finalSystemPrompt.length,
-          finalPromptPreview: finalSystemPrompt.slice(0, 200) + '...'
+          finalPromptPreview: `${finalSystemPrompt.slice(0, 200)}...`,
         });
 
         const result = streamText({

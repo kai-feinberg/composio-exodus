@@ -4,7 +4,7 @@ import { useChat } from '@ai-sdk/react';
 import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
+import type { Vote, Agent } from '@/lib/db/schema';
 import { fetcher, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
@@ -40,14 +40,73 @@ export function Chat({
   session: Session;
   autoResume: boolean;
 }) {
-  const [selectedAgentId, setSelectedAgentId] = useLocalStorage<string | undefined>(
-    'selectedAgentId',
-    undefined
+  const [selectedAgentId, setSelectedAgentId] = useLocalStorage<
+    string | undefined
+  >('selectedAgentId', undefined);
+
+  // Fetch agents to ensure we have a fallback when no agent is selected
+  const { data: agentsData } = useSWR<{ agents: Agent[] }>(
+    '/api/agents',
+    fetcher,
   );
+
+  const [currentAgentId, setCurrentAgentId] = useState<string | undefined>(
+    selectedAgentId,
+  );
+
+  // Function to get the current agent ID dynamically
+  const getCurrentAgentId = () => {
+    // First check if we have a selected agent
+    if (selectedAgentId) {
+      return selectedAgentId;
+    }
+    // Fallback to first available agent
+    if (agentsData?.agents && agentsData.agents.length > 0) {
+      return agentsData.agents[0].id;
+    }
+    // No agent available
+    return undefined;
+  };
+
+  // Update currentAgentId when selectedAgentId changes or when agents are loaded
+  useEffect(() => {
+    if (selectedAgentId) {
+      setCurrentAgentId(selectedAgentId);
+    } else if (agentsData?.agents && agentsData.agents.length > 0) {
+      // Fallback to first agent if no agent is selected (same logic as AgentSelector)
+      const firstAgentId = agentsData.agents[0].id;
+      setCurrentAgentId(firstAgentId);
+      console.log(
+        '🔄 No agent selected, falling back to first agent:',
+        firstAgentId,
+      );
+    }
+  }, [selectedAgentId, agentsData?.agents]);
 
   const handleAgentChange = (agentId: string) => {
     console.log('🔄 Agent changed:', { from: selectedAgentId, to: agentId });
+
+    // Defensive programming: validate input
+    if (!agentId || typeof agentId !== 'string') {
+      console.error('❌ Invalid agent ID provided:', agentId);
+      return;
+    }
+
+    // Validate UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(agentId)) {
+      console.error('❌ Invalid agent ID format:', agentId);
+      toast({
+        type: 'error',
+        description: 'Invalid agent ID format',
+      });
+      return;
+    }
+
+    // Atomic state update - both states updated together
     setSelectedAgentId(agentId);
+    setCurrentAgentId(agentId);
   };
 
   const { visibilityType } = useChatVisibility({
@@ -73,28 +132,6 @@ export function Chat({
     messages: initialMessages,
     experimental_throttle: 100,
     generateId: generateUUID,
-    experimental_prepareRequestBody: ({ messages, requestData }) => {
-      const requestBody = {
-        id,
-        message: messages.at(-1),
-        selectedChatModel: initialChatModel,
-        selectedVisibilityType: visibilityType,
-        selectedAgentId, // Dynamic agent switching without remount!
-        ...requestData,
-      };
-      
-      console.log('📤 Sending request to API with agent hotswitch:', {
-        chatId: id,
-        selectedChatModel: initialChatModel,
-        selectedAgentId,
-        messageCount: messages.length,
-        hasMessage: !!requestBody.message,
-        messagePreview: requestBody.message?.parts?.[0]?.type === 'text' ? 
-          requestBody.message.parts[0].text.slice(0, 50) + '...' : 'non-text'
-      });
-      
-      return requestBody;
-    },
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
@@ -118,15 +155,32 @@ export function Chat({
 
   useEffect(() => {
     if (query && !hasAppendedQuery) {
-      sendMessage({
-        role: 'user' as const,
-        parts: [{ type: 'text', text: query }],
-      });
+      sendMessage(
+        {
+          role: 'user' as const,
+          parts: [{ type: 'text', text: query }],
+        },
+        {
+          body: {
+            selectedChatModel: initialChatModel,
+            selectedVisibilityType: visibilityType,
+            selectedAgentId: currentAgentId,
+          },
+        },
+      );
 
       setHasAppendedQuery(true);
       window.history.replaceState({}, '', `/chat/${id}`);
     }
-  }, [query, sendMessage, hasAppendedQuery, id]);
+  }, [
+    query,
+    sendMessage,
+    hasAppendedQuery,
+    id,
+    initialChatModel,
+    visibilityType,
+    currentAgentId,
+  ]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -147,9 +201,10 @@ export function Chat({
   useEffect(() => {
     console.log('🔥 Agent hotswitch - no remount needed:', {
       selectedAgentId,
-      messageCount: messages.length
+      currentAgentId,
+      messageCount: messages.length,
     });
-  }, [selectedAgentId, messages.length]);
+  }, [selectedAgentId, currentAgentId, messages.length]);
 
   return (
     <>
@@ -187,7 +242,8 @@ export function Chat({
               setMessages={setMessages}
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
-              selectedAgentId={selectedAgentId}
+              selectedAgentId={currentAgentId}
+              selectedChatModel={initialChatModel}
               onAgentChange={handleAgentChange}
             />
           )}
