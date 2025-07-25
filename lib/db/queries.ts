@@ -27,6 +27,7 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  agent,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -533,6 +534,124 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get stream ids by chat id',
+    );
+  }
+}
+
+// Agent-related queries
+export async function createAgent({
+  name,
+  description,
+  systemPrompt,
+  modelId,
+  userId,
+}: {
+  name: string;
+  description?: string;
+  systemPrompt: string;
+  modelId: string;
+  userId: string;
+}) {
+  try {
+    const [createdAgent] = await db
+      .insert(agent)
+      .values({
+        name,
+        description,
+        systemPrompt,
+        modelId,
+        userId,
+      })
+      .returning();
+
+    return createdAgent;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create agent',
+    );
+  }
+}
+
+export async function getAgentsByUserId({ userId }: { userId: string }) {
+  try {
+    return await db
+      .select()
+      .from(agent)
+      .where(eq(agent.userId, userId))
+      .orderBy(desc(agent.createdAt));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get agents by user id',
+    );
+  }
+}
+
+export async function getAgentById({ id }: { id: string }) {
+  try {
+    const [agentData] = await db
+      .select()
+      .from(agent)
+      .where(eq(agent.id, id));
+
+    return agentData;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get agent by id',
+    );
+  }
+}
+
+export async function updateAgent({
+  id,
+  name,
+  description,
+  systemPrompt,
+  modelId,
+}: {
+  id: string;
+  name?: string;
+  description?: string;
+  systemPrompt?: string;
+  modelId?: string;
+}) {
+  try {
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (systemPrompt !== undefined) updateData.systemPrompt = systemPrompt;
+    if (modelId !== undefined) updateData.modelId = modelId;
+
+    const [updatedAgent] = await db
+      .update(agent)
+      .set(updateData)
+      .where(eq(agent.id, id))
+      .returning();
+
+    return updatedAgent;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update agent',
+    );
+  }
+}
+
+export async function deleteAgent({ id }: { id: string }) {
+  try {
+    const [deletedAgent] = await db
+      .delete(agent)
+      .where(eq(agent.id, id))
+      .returning();
+
+    return deletedAgent;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete agent',
     );
   }
 }

@@ -28,6 +28,8 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import { AgentSelector } from './agent-selector';
+import { AgentManagement } from './agent-management';
 
 function PureMultimodalInput({
   chatId,
@@ -42,6 +44,8 @@ function PureMultimodalInput({
   sendMessage,
   className,
   selectedVisibilityType,
+  selectedAgentId,
+  onAgentChange,
 }: {
   chatId: string;
   input: string;
@@ -55,6 +59,8 @@ function PureMultimodalInput({
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  selectedAgentId?: string;
+  onAgentChange: (agentId: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -107,6 +113,7 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+  const [isAgentManagementOpen, setIsAgentManagementOpen] = useState(false);
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -253,6 +260,7 @@ function PureMultimodalInput({
         tabIndex={-1}
       />
 
+
       {(attachments.length > 0 || uploadQueue.length > 0) && (
         <div
           data-testid="attachments-preview"
@@ -305,8 +313,14 @@ function PureMultimodalInput({
         }}
       />
 
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
+      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start items-center gap-2">
         <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+        <AgentSelector
+          selectedAgentId={selectedAgentId}
+          onAgentChange={onAgentChange}
+          onManageAgents={() => setIsAgentManagementOpen(true)}
+          disabled={status !== 'ready'}
+        />
       </div>
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
@@ -320,6 +334,12 @@ function PureMultimodalInput({
           />
         )}
       </div>
+
+      {/* Agent Management Dialog */}
+      <AgentManagement
+        isOpen={isAgentManagementOpen}
+        onClose={() => setIsAgentManagementOpen(false)}
+      />
     </div>
   );
 }
@@ -332,6 +352,7 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
+    if (prevProps.selectedAgentId !== nextProps.selectedAgentId) return false;
 
     return true;
   },

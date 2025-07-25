@@ -1,12 +1,11 @@
 'use client';
 
-import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
-import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
+import { fetcher, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -22,6 +21,7 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useLocalStorage } from 'usehooks-ts';
 
 export function Chat({
   id,
@@ -40,6 +40,16 @@ export function Chat({
   session: Session;
   autoResume: boolean;
 }) {
+  const [selectedAgentId, setSelectedAgentId] = useLocalStorage<string | undefined>(
+    'selectedAgentId',
+    undefined
+  );
+
+  const handleAgentChange = (agentId: string) => {
+    console.log('🔄 Agent changed:', { from: selectedAgentId, to: agentId });
+    setSelectedAgentId(agentId);
+  };
+
   const { visibilityType } = useChatVisibility({
     chatId: id,
     initialVisibilityType,
@@ -63,21 +73,28 @@ export function Chat({
     messages: initialMessages,
     experimental_throttle: 100,
     generateId: generateUUID,
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      fetch: fetchWithErrorHandlers,
-      prepareSendMessagesRequest({ messages, id, body }) {
-        return {
-          body: {
-            id,
-            message: messages.at(-1),
-            selectedChatModel: initialChatModel,
-            selectedVisibilityType: visibilityType,
-            ...body,
-          },
-        };
-      },
-    }),
+    experimental_prepareRequestBody: ({ messages, requestData }) => {
+      const requestBody = {
+        id,
+        message: messages.at(-1),
+        selectedChatModel: initialChatModel,
+        selectedVisibilityType: visibilityType,
+        selectedAgentId, // Dynamic agent switching without remount!
+        ...requestData,
+      };
+      
+      console.log('📤 Sending request to API with agent hotswitch:', {
+        chatId: id,
+        selectedChatModel: initialChatModel,
+        selectedAgentId,
+        messageCount: messages.length,
+        hasMessage: !!requestBody.message,
+        messagePreview: requestBody.message?.parts?.[0]?.type === 'text' ? 
+          requestBody.message.parts[0].text.slice(0, 50) + '...' : 'non-text'
+      });
+      
+      return requestBody;
+    },
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
@@ -126,6 +143,14 @@ export function Chat({
     setMessages,
   });
 
+  // Debug logging for agent hotswitch
+  useEffect(() => {
+    console.log('🔥 Agent hotswitch - no remount needed:', {
+      selectedAgentId,
+      messageCount: messages.length
+    });
+  }, [selectedAgentId, messages.length]);
+
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
@@ -162,6 +187,8 @@ export function Chat({
               setMessages={setMessages}
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
+              selectedAgentId={selectedAgentId}
+              onAgentChange={handleAgentChange}
             />
           )}
         </form>

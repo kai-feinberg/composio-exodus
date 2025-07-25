@@ -16,6 +16,7 @@ import {
   getMessagesByChatId,
   saveChat,
   saveMessages,
+  getAgentById,
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -78,12 +79,22 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
+      selectedAgentId,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel['id'];
       selectedVisibilityType: VisibilityType;
+      selectedAgentId?: string;
     } = requestBody;
+
+    console.log('🔍 API Request received:', {
+      chatId: id,
+      selectedChatModel,
+      selectedAgentId,
+      hasMessage: !!message,
+      messagePreview: message?.parts?.[0]?.type === 'text' ? message.parts[0].text.slice(0, 50) + '...' : 'non-text'
+    });
 
     const session = await auth();
 
@@ -133,6 +144,44 @@ export async function POST(request: Request) {
       country,
     };
 
+    // Get agent configuration if provided
+    let agentSystemPrompt: string | undefined;
+    let effectiveChatModel = selectedChatModel;
+
+    if (selectedAgentId) {
+      console.log('🤖 Attempting to load agent:', selectedAgentId);
+      try {
+        const agent = await getAgentById({ id: selectedAgentId });
+        console.log('🤖 Agent retrieved from DB:', {
+          found: !!agent,
+          agentId: agent?.id,
+          agentName: agent?.name,
+          agentUserId: agent?.userId,
+          sessionUserId: session.user.id,
+          userMatch: agent?.userId === session.user.id,
+          modelId: agent?.modelId,
+          systemPromptLength: agent?.systemPrompt?.length
+        });
+        
+        if (agent && agent.userId === session.user.id) {
+          agentSystemPrompt = agent.systemPrompt;
+          effectiveChatModel = agent.modelId as ChatModel['id'];
+          console.log('✅ Agent configuration applied:', {
+            agentName: agent.name,
+            effectiveChatModel,
+            systemPromptPreview: agentSystemPrompt.slice(0, 100) + '...'
+          });
+        } else {
+          console.warn('❌ Agent not applied - user mismatch or not found');
+        }
+      } catch (error) {
+        // Agent not found or error - continue with default behavior
+        console.warn('❌ Agent retrieval error:', error);
+      }
+    } else {
+      console.log('🤖 No agent selected, using default configuration');
+    }
+
     await saveMessages({
       messages: [
         {
@@ -151,13 +200,27 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
+        const finalSystemPrompt = systemPrompt({ 
+          selectedChatModel: effectiveChatModel, 
+          requestHints,
+          agentSystemPrompt 
+        });
+
+        console.log('📝 Final system prompt configuration:', {
+          effectiveChatModel,
+          hasAgentPrompt: !!agentSystemPrompt,
+          agentPromptPreview: agentSystemPrompt ? agentSystemPrompt.slice(0, 100) + '...' : 'none',
+          finalPromptLength: finalSystemPrompt.length,
+          finalPromptPreview: finalSystemPrompt.slice(0, 200) + '...'
+        });
+
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          model: myProvider.languageModel(effectiveChatModel),
+          system: finalSystemPrompt,
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
+            effectiveChatModel === 'chat-model-reasoning'
               ? []
               : [
                   'getWeather',
