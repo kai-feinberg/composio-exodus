@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/lib/auth';
 import { 
   getAgentById, 
   updateAgent, 
@@ -16,8 +16,9 @@ const updateAgentSchema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -25,10 +26,10 @@ export async function GET(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const agent = await getAgentById({ id: params.id });
+    const agent = await getAgentById({ id });
 
     if (!agent) {
-      return new ChatSDKError('not_found', 'Agent not found').toResponse();
+      return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
     // Check if user owns this agent
@@ -42,14 +43,15 @@ export async function GET(
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to get agent').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to get agent').toResponse();
   }
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -58,10 +60,10 @@ export async function PUT(
     }
 
     // Check if agent exists and user owns it
-    const existingAgent = await getAgentById({ id: params.id });
+    const existingAgent = await getAgentById({ id });
     
     if (!existingAgent) {
-      return new ChatSDKError('not_found', 'Agent not found').toResponse();
+      return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
     if (existingAgent.userId !== session.user.id) {
@@ -72,28 +74,29 @@ export async function PUT(
     const validatedData = updateAgentSchema.parse(json);
 
     const agent = await updateAgent({
-      id: params.id,
+      id,
       ...validatedData,
     });
 
     return Response.json({ agent }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new ChatSDKError('bad_request:validation', 'Invalid agent data').toResponse();
+      return new ChatSDKError('bad_request:api', 'Invalid agent data').toResponse();
     }
 
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to update agent').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to update agent').toResponse();
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth();
 
@@ -102,17 +105,17 @@ export async function DELETE(
     }
 
     // Check if agent exists and user owns it
-    const existingAgent = await getAgentById({ id: params.id });
+    const existingAgent = await getAgentById({ id });
     
     if (!existingAgent) {
-      return new ChatSDKError('not_found', 'Agent not found').toResponse();
+      return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
     if (existingAgent.userId !== session.user.id) {
       return new ChatSDKError('forbidden:chat').toResponse();
     }
 
-    const agent = await deleteAgent({ id: params.id });
+    const agent = await deleteAgent({ id });
 
     return Response.json({ agent }, { status: 200 });
   } catch (error) {
@@ -120,6 +123,6 @@ export async function DELETE(
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to delete agent').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to delete agent').toResponse();
   }
 }

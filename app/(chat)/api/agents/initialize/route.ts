@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/lib/auth';
 import { 
   createAgent, 
   getAgentsByUserId 
@@ -44,6 +44,6 @@ export async function POST() {
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to initialize agents').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to initialize agents').toResponse();
   }
 }

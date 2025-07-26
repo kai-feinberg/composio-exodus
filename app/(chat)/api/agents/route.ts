@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth } from '@/lib/auth';
 import { 
   createAgent, 
   getAgentsByUserId 
@@ -29,7 +29,7 @@ export async function GET() {
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to get agents').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to get agents').toResponse();
   }
 }
 
@@ -52,13 +52,13 @@ export async function POST(request: Request) {
     return Response.json({ agent }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new ChatSDKError('bad_request:validation', 'Invalid agent data').toResponse();
+      return new ChatSDKError('bad_request:api', 'Invalid agent data').toResponse();
     }
 
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
     
-    return new ChatSDKError('internal_server_error', 'Failed to create agent').toResponse();
+    return new ChatSDKError('bad_request:api', 'Failed to create agent').toResponse();
   }
 }
