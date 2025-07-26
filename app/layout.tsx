@@ -1,6 +1,6 @@
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Poppins, Roboto_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/nextjs';
 
@@ -8,24 +8,25 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  title: 'Horde AI Chat',
+  description: 'Modern AI chat interface powered by Next.js',
 };
 
 export const viewport = {
   maximumScale: 1, // Disable auto-zoom on mobile Safari
 };
 
-const geist = Geist({
+const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-geist',
+  variable: '--font-poppins',
+  weight: ['300', '400', '500', '600', '700'],
 });
 
-const geistMono = Geist_Mono({
+const robotoMono = Roboto_Mono({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-geist-mono',
+  variable: '--font-roboto-mono',
 });
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
@@ -62,7 +63,7 @@ export default async function RootLayout({
         // prop is necessary to avoid the React hydration mismatch warning.
         // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
         suppressHydrationWarning
-        className={`${geist.variable} ${geistMono.variable}`}
+        className={`${poppins.variable} ${robotoMono.variable}`}
       >
         <head>
           <script

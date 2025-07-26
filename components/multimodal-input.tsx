@@ -30,6 +30,7 @@ import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { AgentSelector } from './agent-selector';
 import { AgentManagement } from './agent-management';
+import { generateUUID } from '@/lib/utils';
 
 function PureMultimodalInput({
   chatId,
@@ -122,6 +123,7 @@ function PureMultimodalInput({
 
     sendMessage(
       {
+        id: generateUUID(),
         role: 'user',
         parts: [
           ...attachments.map((attachment) => ({
@@ -140,7 +142,7 @@ function PureMultimodalInput({
         body: {
           selectedChatModel: selectedChatModel,
           selectedVisibilityType: selectedVisibilityType,
-          selectedAgentId: selectedAgentId,
+          ...(selectedAgentId && { selectedAgentId: selectedAgentId }),
         },
       },
     );
