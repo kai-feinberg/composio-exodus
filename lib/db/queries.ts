@@ -553,15 +553,6 @@ export async function createAgent({
   userId: string;
 }) {
   try {
-    // Ensure user exists in database
-    await db
-      .insert(user)
-      .values({
-        id: userId,
-        email: '', // Placeholder email since it's required but we don't have it from Clerk
-      })
-      .onConflictDoNothing();
-    
     const [createdAgent] = await db
       .insert(agent)
       .values({

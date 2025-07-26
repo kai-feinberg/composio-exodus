@@ -57,13 +57,6 @@
       "when": 1753387283357,
       "tag": "0007_thick_dragon_man",
       "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1753509540990,
-      "tag": "0008_big_the_fallen",
-      "breakpoints": true
     }
   ]
 }
