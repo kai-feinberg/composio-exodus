@@ -61,9 +61,14 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
                   height={24}
                   className="rounded-full"
                 />
-                <span data-testid="user-email" className="truncate">
-                  {user?.emailAddresses[0]?.emailAddress}
-                </span>
+                <div className="flex flex-col items-start min-w-0">
+                  <span data-testid="user-email" className="truncate text-sm">
+                    {user?.emailAddresses[0]?.emailAddress}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    ID: {user?.id}
+                  </span>
+                </div>
                 <ChevronUp className="ml-auto" />
               </SidebarMenuButton>
             )}

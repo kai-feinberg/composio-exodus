@@ -44,7 +44,7 @@ pnpm test           # Run Playwright e2e tests
 
 - **App Router**: Next.js 15 with React Server Components and Server Actions
 - **Database**: PostgreSQL with Drizzle ORM, schema versioning (Message_v2, Vote_v2)
-- **Authentication**: NextAuth.js (Auth.js) with email/password
+- **Authentication**: Clerk with email/password
 - **AI Provider**: xAI Grok models (configurable via `lib/ai/providers.ts`)
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Code Quality**: Biome for linting/formatting, ESLint for additional checks
@@ -101,7 +101,7 @@ Supports four artifact types:
 Create `.env.local` with required variables (see `.env.example` in original repo):
 
 - `POSTGRES_URL` - Database connection
-- `AUTH_SECRET` - NextAuth secret
+- `CLERK_SECRET_KEY` - Clerk secret key
 - AI provider API keys
 
 ## Testing

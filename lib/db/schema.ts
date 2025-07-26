@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  id: varchar('id', { length: 255 }).primaryKey().notNull(),
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
 });
@@ -23,7 +23,7 @@ export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   createdAt: timestamp('createdAt').notNull(),
   title: text('title').notNull(),
-  userId: uuid('userId')
+  userId: varchar('userId', { length: 255 })
     .notNull()
     .references(() => user.id),
   visibility: varchar('visibility', { enum: ['public', 'private'] })
@@ -112,7 +112,7 @@ export const document = pgTable(
     kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
       .notNull()
       .default('text'),
-    userId: uuid('userId')
+    userId: varchar('userId', { length: 255 })
       .notNull()
       .references(() => user.id),
   },
@@ -135,7 +135,7 @@ export const suggestion = pgTable(
     suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId')
+    userId: varchar('userId', { length: 255 })
       .notNull()
       .references(() => user.id),
     createdAt: timestamp('createdAt').notNull(),
@@ -175,7 +175,7 @@ export const agent = pgTable('Agent', {
   description: text('description'),
   systemPrompt: text('systemPrompt').notNull(),
   modelId: varchar('modelId', { length: 50 }).notNull().default('chat-model'),
-  userId: uuid('userId')
+  userId: varchar('userId', { length: 255 })
     .notNull()
     .references(() => user.id),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
