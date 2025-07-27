@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote, Agent } from '@/lib/db/schema';
@@ -50,12 +50,8 @@ export function Chat({
     fetcher,
   );
 
-  const [currentAgentId, setCurrentAgentId] = useState<string | undefined>(
-    selectedAgentId,
-  );
-
   // Function to get the current agent ID dynamically
-  const getCurrentAgentId = () => {
+  const getCurrentAgentId = useCallback(() => {
     // First check if we have a selected agent
     if (selectedAgentId) {
       return selectedAgentId;
@@ -66,21 +62,6 @@ export function Chat({
     }
     // No agent available
     return undefined;
-  };
-
-  // Update currentAgentId when selectedAgentId changes or when agents are loaded
-  useEffect(() => {
-    if (selectedAgentId) {
-      setCurrentAgentId(selectedAgentId);
-    } else if (agentsData?.agents && agentsData.agents.length > 0) {
-      // Fallback to first agent if no agent is selected (same logic as AgentSelector)
-      const firstAgentId = agentsData.agents[0].id;
-      setCurrentAgentId(firstAgentId);
-      console.log(
-        '🔄 No agent selected, falling back to first agent:',
-        firstAgentId,
-      );
-    }
   }, [selectedAgentId, agentsData?.agents]);
 
   const handleAgentChange = (agentId: string) => {
@@ -104,9 +85,8 @@ export function Chat({
       return;
     }
 
-    // Atomic state update - both states updated together
+    // Update selected agent
     setSelectedAgentId(agentId);
-    setCurrentAgentId(agentId);
   };
 
   const { visibilityType } = useChatVisibility({
@@ -164,7 +144,7 @@ export function Chat({
           body: {
             selectedChatModel: initialChatModel,
             selectedVisibilityType: visibilityType,
-            selectedAgentId: currentAgentId,
+            selectedAgentId: getCurrentAgentId(),
           },
         },
       );
@@ -179,7 +159,7 @@ export function Chat({
     id,
     initialChatModel,
     visibilityType,
-    currentAgentId,
+    getCurrentAgentId,
   ]);
 
   const { data: votes } = useSWR<Array<Vote>>(
@@ -201,10 +181,10 @@ export function Chat({
   useEffect(() => {
     console.log('🔥 Agent hotswitch - no remount needed:', {
       selectedAgentId,
-      currentAgentId,
+      currentAgentId: getCurrentAgentId(),
       messageCount: messages.length,
     });
-  }, [selectedAgentId, currentAgentId, messages.length]);
+  }, [selectedAgentId, getCurrentAgentId, messages.length]);
 
   return (
     <>
@@ -242,7 +222,7 @@ export function Chat({
               setMessages={setMessages}
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
-              selectedAgentId={currentAgentId}
+              selectedAgentId={getCurrentAgentId()}
               selectedChatModel={initialChatModel}
               onAgentChange={handleAgentChange}
             />
@@ -265,7 +245,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
-        selectedAgentId={currentAgentId}
+        selectedAgentId={getCurrentAgentId()}
         selectedChatModel={initialChatModel}
         onAgentChange={handleAgentChange}
       />

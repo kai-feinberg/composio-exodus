@@ -58,7 +58,9 @@ export async function createUser(id: string, email: string, password?: string) {
   const hashedPassword = password ? generateHashedPassword(password) : null;
 
   try {
-    return await db.insert(user).values({ id, email, password: hashedPassword });
+    return await db
+      .insert(user)
+      .values({ id, email, password: hashedPassword });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to create user');
   }
@@ -228,7 +230,8 @@ export async function getMessagesByChatId({ id }: { id: string }) {
       .select()
       .from(message)
       .where(eq(message.chatId, id))
-      .orderBy(asc(message.createdAt));
+      .orderBy(asc(message.createdAt))
+      .limit(5);
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
@@ -567,10 +570,7 @@ export async function createAgent({
 
     return createdAgent;
   } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to create agent',
-    );
+    throw new ChatSDKError('bad_request:database', 'Failed to create agent');
   }
 }
 
@@ -591,17 +591,11 @@ export async function getAgentsByUserId({ userId }: { userId: string }) {
 
 export async function getAgentById({ id }: { id: string }) {
   try {
-    const [agentData] = await db
-      .select()
-      .from(agent)
-      .where(eq(agent.id, id));
+    const [agentData] = await db.select().from(agent).where(eq(agent.id, id));
 
     return agentData;
   } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to get agent by id',
-    );
+    throw new ChatSDKError('bad_request:database', 'Failed to get agent by id');
   }
 }
 
@@ -620,7 +614,7 @@ export async function updateAgent({
 }) {
   try {
     const updateData: any = { updatedAt: new Date() };
-    
+
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (systemPrompt !== undefined) updateData.systemPrompt = systemPrompt;
@@ -634,10 +628,7 @@ export async function updateAgent({
 
     return updatedAgent;
   } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to update agent',
-    );
+    throw new ChatSDKError('bad_request:database', 'Failed to update agent');
   }
 }
 
@@ -650,9 +641,6 @@ export async function deleteAgent({ id }: { id: string }) {
 
     return deletedAgent;
   } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to delete agent',
-    );
+    throw new ChatSDKError('bad_request:database', 'Failed to delete agent');
   }
 }

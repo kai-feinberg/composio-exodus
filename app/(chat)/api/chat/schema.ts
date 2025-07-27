@@ -17,7 +17,15 @@ const stepStartPartSchema = z.object({
   type: z.enum(['step-start']),
 });
 
-const partSchema = z.union([textPartSchema, filePartSchema, stepStartPartSchema]);
+const toolPartSchema = z.object({
+  type: z.enum(['tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-getWeather']), // Known tool types
+  toolCallId: z.string().optional(),
+  state: z.enum(['partial-call', 'call', 'result', 'output-available']).optional(),
+  input: z.any().optional(),
+  output: z.any().optional(),
+});
+
+const partSchema = z.union([textPartSchema, filePartSchema, stepStartPartSchema, toolPartSchema]);
 
 // AI SDK v5 request structure - body fields may or may not be at top level
 const aiSdkRequestSchema = z.object({

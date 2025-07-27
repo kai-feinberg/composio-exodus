@@ -1,3 +1,10 @@
+# Priorities
+
+- switch agent from within artifacts view
+- upload/chat with text files
+  ensure system prompts can be 50+ pages (load in from files stored in vercel blob)
+- agents with uploaded system prompts
+
 ## Features
 
 - llm switching via llm gateway
@@ -33,8 +40,6 @@ store org id for agent configs
 2. ensure system prompts can be 50+ pages (load in from files stored in vercel blob)
 3. @ mention agents within input
 
-# Priorities
+# Bugs
 
-ensure system prompts can be 50+ pages (load in from files stored in vercel blob)
-
-- upload text files
+Agent switch in artifact page
