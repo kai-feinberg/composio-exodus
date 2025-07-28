@@ -356,6 +356,7 @@ function PureMultimodalInput({
       <AgentManagement
         isOpen={isAgentManagementOpen}
         onClose={() => setIsAgentManagementOpen(false)}
+        editingAgent={null}
       />
     </div>
   );

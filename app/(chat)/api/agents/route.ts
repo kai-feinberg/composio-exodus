@@ -9,7 +9,7 @@ import { z } from 'zod';
 const createAgentSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  systemPrompt: z.string().min(1),
+  systemPrompt: z.string().min(1).max(100000), // 100KB limit for large prompts from DOCX files
   modelId: z.enum(['chat-model', 'chat-model-reasoning']),
 });
 

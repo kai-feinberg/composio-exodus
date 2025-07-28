@@ -1,47 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Bot, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Bot, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/toast';
-
-interface Agent {
-  id: string;
-  name: string;
-  description?: string;
-  systemPrompt: string;
-  modelId: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AgentFormData {
-  name: string;
-  description: string;
-  systemPrompt: string;
-  modelId: string;
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { AgentManagement } from '@/components/agent-management';
+import { chatModels } from '@/lib/ai/models';
+import type { Agent } from '@/lib/db/schema';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAgentManagementOpen, setIsAgentManagementOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [formData, setFormData] = useState<AgentFormData>({
-    name: '',
-    description: '',
-    systemPrompt: '',
-    modelId: 'chat-model',
-  });
 
   const fetchAgents = async () => {
     try {
@@ -66,65 +50,19 @@ export default function AgentsPage() {
     fetchAgents();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim() || !formData.systemPrompt.trim()) {
-      toast({
-        type: 'error',
-        description: 'Name and system prompt are required',
-      });
-      return;
-    }
-
-    try {
-      const url = editingAgent ? `/api/agents/${editingAgent.id}` : '/api/agents';
-      const method = editingAgent ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${editingAgent ? 'update' : 'create'} agent`);
-      }
-
-      toast({
-        type: 'success',
-        description: `Agent ${editingAgent ? 'updated' : 'created'} successfully`,
-      });
-
-      setFormData({ name: '', description: '', systemPrompt: '', modelId: 'chat-model' });
-      setIsCreateDialogOpen(false);
-      setEditingAgent(null);
-      fetchAgents();
-    } catch (error) {
-      console.error('Error saving agent:', error);
-      toast({
-        type: 'error',
-        description: `Failed to ${editingAgent ? 'update' : 'create'} agent`,
-      });
-    }
+  const handleCreateNew = () => {
+    setEditingAgent(null);
+    setIsAgentManagementOpen(true);
   };
 
   const handleEdit = (agent: Agent) => {
     setEditingAgent(agent);
-    setFormData({
-      name: agent.name,
-      description: agent.description || '',
-      systemPrompt: agent.systemPrompt,
-      modelId: agent.modelId,
-    });
-    setIsCreateDialogOpen(true);
+    setIsAgentManagementOpen(true);
   };
 
-  const handleDelete = async (agentId: string) => {
+  const handleDelete = async (agent: Agent) => {
     try {
-      const response = await fetch(`/api/agents/${agentId}`, {
+      const response = await fetch(`/api/agents/${agent.id}`, {
         method: 'DELETE',
       });
 
@@ -147,16 +85,11 @@ export default function AgentsPage() {
     }
   };
 
-  const handleCreateNew = () => {
+  const handleCloseManagement = () => {
+    setIsAgentManagementOpen(false);
     setEditingAgent(null);
-    setFormData({ name: '', description: '', systemPrompt: '', modelId: 'chat-model' });
-    setIsCreateDialogOpen(true);
-  };
-
-  const handleCancel = () => {
-    setFormData({ name: '', description: '', systemPrompt: '', modelId: 'chat-model' });
-    setIsCreateDialogOpen(false);
-    setEditingAgent(null);
+    // Refresh agents list when management dialog closes
+    fetchAgents();
   };
 
   return (
@@ -164,7 +97,7 @@ export default function AgentsPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Agent Management</h1>
-          <p className="text-muted-foreground">Create and manage your AI agents</p>
+          <p className="text-muted-foreground">Create and manage your AI agents with support for .docx file uploads</p>
         </div>
         <Button onClick={handleCreateNew} className="flex items-center gap-2">
           <Plus className="size-4" />
@@ -195,7 +128,7 @@ export default function AgentsPage() {
           <Bot className="mx-auto size-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
           <p className="text-muted-foreground mb-4">
-            Create your first AI agent to get started
+            Create your first AI agent to get started. You can upload .docx files for system prompts!
           </p>
           <Button onClick={handleCreateNew} className="flex items-center gap-2">
             <Plus className="size-4" />
@@ -218,11 +151,11 @@ export default function AgentsPage() {
               <CardContent className="flex-1">
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground">Model</Label>
-                    <p className="text-sm">{agent.modelId}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Model</p>
+                    <p className="text-sm">{chatModels.find((m) => m.id === agent.modelId)?.name || agent.modelId}</p>
                   </div>
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground">System Prompt</Label>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">System Prompt</p>
                     <p className="text-sm line-clamp-3">{agent.systemPrompt}</p>
                   </div>
                 </div>
@@ -258,7 +191,7 @@ export default function AgentsPage() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDelete(agent.id)}
+                        onClick={() => handleDelete(agent)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Delete
@@ -272,77 +205,11 @@ export default function AgentsPage() {
         </div>
       )}
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-screen-toast-mobile">
-          <DialogHeader>
-            <DialogTitle>
-              {editingAgent ? 'Edit Agent' : 'Create New Agent'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingAgent
-                ? 'Update your agent\'s configuration'
-                : 'Create a new AI agent with custom instructions'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter agent name"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter agent description (optional)"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="modelId">Model</Label>
-              <Select
-                value={formData.modelId}
-                onValueChange={(value) => setFormData({ ...formData, modelId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="chat-model">Chat Model</SelectItem>
-                  <SelectItem value="chat-model-reasoning">Chat Model with Reasoning</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="systemPrompt">System Prompt *</Label>
-              <Textarea
-                id="systemPrompt"
-                value={formData.systemPrompt}
-                onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
-                placeholder="Enter the system prompt that defines the agent's behavior..."
-                rows={6}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCancel}>
-                <X className="size-4 mr-2" />
-                Cancel
-              </Button>
-              <Button type="submit">
-                <Save className="size-4 mr-2" />
-                {editingAgent ? 'Update Agent' : 'Create Agent'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AgentManagement
+        isOpen={isAgentManagementOpen}
+        onClose={handleCloseManagement}
+        editingAgent={editingAgent}
+      />
     </div>
   );
 }
