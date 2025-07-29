@@ -55,7 +55,10 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
                 className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
               >
                 <Image
-                  src={user?.imageUrl || `https://avatar.vercel.sh/${user?.emailAddresses[0]?.emailAddress}`}
+                  src={
+                    user?.imageUrl ||
+                    `https://avatar.vercel.sh/${user?.emailAddresses[0]?.emailAddress}`
+                  }
                   alt={user?.emailAddresses[0]?.emailAddress ?? 'User Avatar'}
                   width={24}
                   height={24}
@@ -76,7 +79,9 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
             <DropdownMenuItem
               data-testid="user-nav-item-theme"
               className="cursor-pointer"
-              onSelect={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              onSelect={() =>
+                setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+              }
             >
               {`Toggle ${resolvedTheme === 'light' ? 'dark' : 'light'} mode`}
             </DropdownMenuItem>

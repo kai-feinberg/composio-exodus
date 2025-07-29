@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, Bot, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/toast';
 import {
@@ -96,8 +103,12 @@ export default function AgentsPage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agent Management</h1>
-          <p className="text-muted-foreground">Create and manage your AI agents with support for .docx file uploads</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Agent Management
+          </h1>
+          <p className="text-muted-foreground">
+            Create and manage your AI agents with support for .docx file uploads
+          </p>
         </div>
         <Button onClick={handleCreateNew} className="flex items-center gap-2">
           <Plus className="size-4" />
@@ -107,7 +118,14 @@ export default function AgentsPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {['agent-1', 'agent-2', 'agent-3', 'agent-4', 'agent-5', 'agent-6'].map((skeletonId) => (
+          {[
+            'agent-1',
+            'agent-2',
+            'agent-3',
+            'agent-4',
+            'agent-5',
+            'agent-6',
+          ].map((skeletonId) => (
             <Card key={skeletonId}>
               <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
@@ -128,7 +146,8 @@ export default function AgentsPage() {
           <Bot className="mx-auto size-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
           <p className="text-muted-foreground mb-4">
-            Create your first AI agent to get started. You can upload .docx files for system prompts!
+            Create your first AI agent to get started. You can upload .docx
+            files for system prompts!
           </p>
           <Button onClick={handleCreateNew} className="flex items-center gap-2">
             <Plus className="size-4" />
@@ -151,11 +170,18 @@ export default function AgentsPage() {
               <CardContent className="flex-1">
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Model</p>
-                    <p className="text-sm">{chatModels.find((m) => m.id === agent.modelId)?.name || agent.modelId}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      Model
+                    </p>
+                    <p className="text-sm">
+                      {chatModels.find((m) => m.id === agent.modelId)?.name ||
+                        agent.modelId}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">System Prompt</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      System Prompt
+                    </p>
                     <p className="text-sm line-clamp-3">{agent.systemPrompt}</p>
                   </div>
                 </div>
@@ -185,7 +211,8 @@ export default function AgentsPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Agent</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete &quot;{agent.name}&quot;? This action cannot be undone.
+                        Are you sure you want to delete &quot;{agent.name}
+                        &quot;? This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

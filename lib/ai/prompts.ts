@@ -62,11 +62,9 @@ export const systemPrompt = ({
   const requestPrompt = getRequestPromptFromHints(requestHints);
   const basePrompt = agentSystemPrompt || regularPrompt;
 
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${basePrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${basePrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
+  // Include artifacts prompt for both regular and reasoning models
+  // The reasoning model can still use artifacts while leveraging its reasoning capabilities
+  return `${basePrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

@@ -9,7 +9,11 @@ export interface DocxProcessingResult {
 
 export interface DocxProcessingError {
   message: string;
-  code: 'INVALID_FILE' | 'PROCESSING_FAILED' | 'EMPTY_CONTENT' | 'FILE_TOO_LARGE';
+  code:
+    | 'INVALID_FILE'
+    | 'PROCESSING_FAILED'
+    | 'EMPTY_CONTENT'
+    | 'FILE_TOO_LARGE';
 }
 
 /**
@@ -17,7 +21,9 @@ export interface DocxProcessingError {
  * @param file - The DOCX file to process
  * @returns Promise with extracted text and metadata
  */
-export async function extractTextFromDocx(file: File): Promise<DocxProcessingResult> {
+export async function extractTextFromDocx(
+  file: File,
+): Promise<DocxProcessingResult> {
   // Validate file type
   if (!file.name.toLowerCase().endsWith('.docx')) {
     const error = new Error('Only .docx files are supported') as any;
@@ -39,23 +45,27 @@ export async function extractTextFromDocx(file: File): Promise<DocxProcessingRes
 
     // Extract raw text using mammoth
     const result = await mammoth.extractRawText({ arrayBuffer });
-    
+
     // Clean up the extracted text
     const cleanText = result.value.trim();
-    
+
     // Check if content is empty
     if (!cleanText) {
-      const error = new Error('Document appears to be empty or contains no readable text') as any;
+      const error = new Error(
+        'Document appears to be empty or contains no readable text',
+      ) as any;
       error.code = 'EMPTY_CONTENT';
       throw error;
     }
 
     // Calculate metrics
-    const wordCount = cleanText.split(/\s+/).filter(word => word.length > 0).length;
+    const wordCount = cleanText
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
     const characterCount = cleanText.length;
 
     // Extract warnings from mammoth result
-    const warnings = result.messages.map(msg => msg.message);
+    const warnings = result.messages.map((msg) => msg.message);
 
     return {
       text: cleanText,
@@ -67,8 +77,10 @@ export async function extractTextFromDocx(file: File): Promise<DocxProcessingRes
     if (error instanceof Error && 'code' in error) {
       throw error; // Re-throw our custom errors
     }
-    
-    const processingError = new Error(`Failed to process DOCX file: ${error instanceof Error ? error.message : 'Unknown error'}`) as any;
+
+    const processingError = new Error(
+      `Failed to process DOCX file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    ) as any;
     processingError.code = 'PROCESSING_FAILED';
     throw processingError;
   }
@@ -82,7 +94,8 @@ export async function extractTextFromDocx(file: File): Promise<DocxProcessingRes
 export function isValidDocxFile(file: File): boolean {
   return (
     file.name.toLowerCase().endsWith('.docx') &&
-    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' &&
+    file.type ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' &&
     file.size <= 10 * 1024 * 1024 // 10MB limit
   );
 }
@@ -94,10 +107,10 @@ export function isValidDocxFile(file: File): boolean {
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }

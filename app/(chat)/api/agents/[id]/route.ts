@@ -1,9 +1,5 @@
 import { auth } from '@/lib/auth';
-import { 
-  getAgentById, 
-  updateAgent, 
-  deleteAgent 
-} from '@/lib/db/queries';
+import { getAgentById, updateAgent, deleteAgent } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
 
@@ -16,7 +12,7 @@ const updateAgentSchema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   try {
@@ -42,14 +38,17 @@ export async function GET(
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
-    
-    return new ChatSDKError('bad_request:api', 'Failed to get agent').toResponse();
+
+    return new ChatSDKError(
+      'bad_request:api',
+      'Failed to get agent',
+    ).toResponse();
   }
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   try {
@@ -61,7 +60,7 @@ export async function PUT(
 
     // Check if agent exists and user owns it
     const existingAgent = await getAgentById({ id });
-    
+
     if (!existingAgent) {
       return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
@@ -81,20 +80,26 @@ export async function PUT(
     return Response.json({ agent }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new ChatSDKError('bad_request:api', 'Invalid agent data').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'Invalid agent data',
+      ).toResponse();
     }
 
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
-    
-    return new ChatSDKError('bad_request:api', 'Failed to update agent').toResponse();
+
+    return new ChatSDKError(
+      'bad_request:api',
+      'Failed to update agent',
+    ).toResponse();
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   try {
@@ -106,7 +111,7 @@ export async function DELETE(
 
     // Check if agent exists and user owns it
     const existingAgent = await getAgentById({ id });
-    
+
     if (!existingAgent) {
       return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
@@ -122,7 +127,10 @@ export async function DELETE(
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
-    
-    return new ChatSDKError('bad_request:api', 'Failed to delete agent').toResponse();
+
+    return new ChatSDKError(
+      'bad_request:api',
+      'Failed to delete agent',
+    ).toResponse();
   }
 }

@@ -31,40 +31,49 @@ export function FileDropzone({
 }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (!disabled && !isProcessing) {
-      setIsDragOver(true);
-    }
-  }, [disabled, isProcessing]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!disabled && !isProcessing) {
+        setIsDragOver(true);
+      }
+    },
+    [disabled, isProcessing],
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
 
-    if (disabled || isProcessing) return;
+      if (disabled || isProcessing) return;
 
-    const files = Array.from(e.dataTransfer.files);
-    const file = files[0];
+      const files = Array.from(e.dataTransfer.files);
+      const file = files[0];
 
-    if (file) {
-      validateAndSelectFile(file);
-    }
-  }, [disabled, isProcessing]);
+      if (file) {
+        validateAndSelectFile(file);
+      }
+    },
+    [disabled, isProcessing],
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      validateAndSelectFile(file);
-    }
-    // Reset input value to allow selecting the same file again
-    e.target.value = '';
-  }, []);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        validateAndSelectFile(file);
+      }
+      // Reset input value to allow selecting the same file again
+      e.target.value = '';
+    },
+    [],
+  );
 
   const validateAndSelectFile = (file: File) => {
     // Check file size
@@ -108,7 +117,7 @@ export function FileDropzone({
             disabled || isProcessing
               ? 'opacity-50 cursor-not-allowed'
               : 'hover:border-muted-foreground/50 cursor-pointer',
-            error && 'border-destructive bg-destructive/5'
+            error && 'border-destructive bg-destructive/5',
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -119,7 +128,11 @@ export function FileDropzone({
             }
           }}
           onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && !disabled && !isProcessing) {
+            if (
+              (e.key === 'Enter' || e.key === ' ') &&
+              !disabled &&
+              !isProcessing
+            ) {
               e.preventDefault();
               document.getElementById('file-input')?.click();
             }
@@ -137,7 +150,9 @@ export function FileDropzone({
           <div className="flex flex-col items-center justify-center text-center">
             <Upload className="h-10 w-10 text-muted-foreground mb-4" />
             <p className="text-sm font-medium mb-2">
-              {isProcessing ? 'Processing file...' : 'Drop your .docx file here'}
+              {isProcessing
+                ? 'Processing file...'
+                : 'Drop your .docx file here'}
             </p>
             <p className="text-xs text-muted-foreground mb-4">
               or click to browse files

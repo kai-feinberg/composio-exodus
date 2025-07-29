@@ -1,13 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Bot,
-  Save,
-  X,
-  ToggleLeft,
-  ToggleRight,
-} from 'lucide-react';
+import { Bot, Save, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -19,13 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from './ui/dialog';
 import type { Agent } from '@/lib/db/schema';
 import { toast } from 'sonner';
@@ -72,7 +66,11 @@ const initialFileUploadState: FileUploadState = {
   error: '',
 };
 
-export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManagementProps) {
+export function AgentManagement({
+  isOpen,
+  onClose,
+  editingAgent,
+}: AgentManagementProps) {
   const [formData, setFormData] = useState<AgentFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [useFileUpload, setUseFileUpload] = useState(false);
@@ -136,7 +134,7 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
       toast.success(
         `Agent ${editingAgent ? 'updated' : 'created'} successfully`,
       );
-      
+
       onClose();
     } catch (error) {
       console.error('Error saving agent:', error);
@@ -223,7 +221,7 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
           </DialogTitle>
           <DialogDescription>
             {editingAgent
-              ? 'Update your agent\'s configuration'
+              ? "Update your agent's configuration"
               : 'Create a new AI agent with custom instructions. You can upload .docx files for system prompts!'}
           </DialogDescription>
         </DialogHeader>
@@ -233,7 +231,9 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               placeholder="Enter agent name"
               required
             />
@@ -243,7 +243,9 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
             <Input
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="Enter agent description (optional)"
             />
           </div>
@@ -251,7 +253,9 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
             <Label htmlFor="modelId">Model</Label>
             <Select
               value={formData.modelId}
-              onValueChange={(value) => setFormData({ ...formData, modelId: value })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, modelId: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a model" />
@@ -308,7 +312,7 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
                       : undefined
                   }
                 />
-                
+
                 {fileUploadState.extractedText && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -316,27 +320,37 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
                         Extracted Content Preview
                       </Label>
                       <div className="text-xs text-muted-foreground">
-                        {fileUploadState.processingResult?.characterCount} chars, {fileUploadState.processingResult?.wordCount} words
+                        {fileUploadState.processingResult?.characterCount}{' '}
+                        chars, {fileUploadState.processingResult?.wordCount}{' '}
+                        words
                       </div>
                     </div>
                     <Textarea
                       value={formData.systemPrompt}
-                      onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          systemPrompt: e.target.value,
+                        })
+                      }
                       placeholder="Extracted text will appear here..."
                       rows={6}
                       className="font-mono text-sm"
                       required
                     />
-                    {fileUploadState.processingResult?.warnings && fileUploadState.processingResult.warnings.length > 0 && (
-                      <div className="text-xs text-amber-600">
-                        <strong>Processing warnings:</strong>
-                        <ul className="list-disc list-inside mt-1">
-                          {fileUploadState.processingResult.warnings.map((warning) => (
-                            <li key={warning}>{warning}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {fileUploadState.processingResult?.warnings &&
+                      fileUploadState.processingResult.warnings.length > 0 && (
+                        <div className="text-xs text-amber-600">
+                          <strong>Processing warnings:</strong>
+                          <ul className="list-disc list-inside mt-1">
+                            {fileUploadState.processingResult.warnings.map(
+                              (warning) => (
+                                <li key={warning}>{warning}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -344,7 +358,9 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
               <Textarea
                 id="systemPrompt"
                 value={formData.systemPrompt}
-                onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, systemPrompt: e.target.value })
+                }
                 placeholder="Enter the system prompt that defines the agent's behavior..."
                 rows={6}
                 required
@@ -358,10 +374,10 @@ export function AgentManagement({ isOpen, onClose, editingAgent }: AgentManageme
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               <Save className="size-4 mr-2" />
-              {isSubmitting 
-                ? 'Saving...' 
-                : editingAgent 
-                  ? 'Update Agent' 
+              {isSubmitting
+                ? 'Saving...'
+                : editingAgent
+                  ? 'Update Agent'
                   : 'Create Agent'}
             </Button>
           </DialogFooter>

@@ -1,8 +1,5 @@
 import { auth } from '@/lib/auth';
-import { 
-  createAgent, 
-  getAgentsByUserId 
-} from '@/lib/db/queries';
+import { createAgent, getAgentsByUserId } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 import { DEFAULT_AGENTS } from '@/lib/types/agent';
 
@@ -16,17 +13,20 @@ export async function POST() {
 
     // Check if user already has agents
     const existingAgents = await getAgentsByUserId({ userId: session.user.id });
-    
+
     if (existingAgents.length > 0) {
-      return Response.json({ 
-        message: 'User already has agents',
-        agents: existingAgents 
-      }, { status: 200 });
+      return Response.json(
+        {
+          message: 'User already has agents',
+          agents: existingAgents,
+        },
+        { status: 200 },
+      );
     }
 
     // Create default agents for the user
     const createdAgents = [];
-    
+
     for (const defaultAgent of DEFAULT_AGENTS) {
       const agent = await createAgent({
         ...defaultAgent,
@@ -35,15 +35,21 @@ export async function POST() {
       createdAgents.push(agent);
     }
 
-    return Response.json({ 
-      message: 'Default agents created',
-      agents: createdAgents 
-    }, { status: 201 });
+    return Response.json(
+      {
+        message: 'Default agents created',
+        agents: createdAgents,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
-    
-    return new ChatSDKError('bad_request:api', 'Failed to initialize agents').toResponse();
+
+    return new ChatSDKError(
+      'bad_request:api',
+      'Failed to initialize agents',
+    ).toResponse();
   }
 }

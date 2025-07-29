@@ -31,7 +31,7 @@ export function AgentSelector({
 }: AgentSelectorProps) {
   const { data, error, mutate } = useSWR<{ agents: Agent[] }>(
     '/api/agents',
-    fetcher
+    fetcher,
   );
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -60,16 +60,34 @@ export function AgentSelector({
   }, [data, mutate, isInitialized]);
 
   const agents = data?.agents || [];
-  const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) || agents[0];
+  const selectedAgent =
+    agents.find((agent) => agent.id === selectedAgentId) || agents[0];
 
   // Ensure proper state synchronization when falling back to first agent
   useEffect(() => {
     // Only trigger fallback after data is loaded and component is initialized
-    if (data && isInitialized && agents.length > 0 && !selectedAgentId && selectedAgent && onAgentChange) {
-      console.log('🔄 AgentSelector: No agent selected, triggering fallback to first agent:', selectedAgent.id);
+    if (
+      data &&
+      isInitialized &&
+      agents.length > 0 &&
+      !selectedAgentId &&
+      selectedAgent &&
+      onAgentChange
+    ) {
+      console.log(
+        '🔄 AgentSelector: No agent selected, triggering fallback to first agent:',
+        selectedAgent.id,
+      );
       onAgentChange(selectedAgent.id);
     }
-  }, [data, isInitialized, agents, selectedAgentId, selectedAgent, onAgentChange]);
+  }, [
+    data,
+    isInitialized,
+    agents,
+    selectedAgentId,
+    selectedAgent,
+    onAgentChange,
+  ]);
 
   if (error) {
     return (
@@ -97,9 +115,9 @@ export function AgentSelector({
           size="sm"
           disabled={disabled}
           className={cn(
-            "flex items-center gap-2 text-sm h-8 px-2 hover:bg-muted/50",
-            "border border-transparent hover:border-border",
-            "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+            'flex items-center gap-2 text-sm h-8 px-2 hover:bg-muted/50',
+            'border border-transparent hover:border-border',
+            'focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring',
           )}
         >
           <Bot size={16} />
@@ -115,7 +133,7 @@ export function AgentSelector({
           Choose Agent
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {agents.map((agent) => (
           <DropdownMenuItem
             key={agent.id}
@@ -129,11 +147,9 @@ export function AgentSelector({
                 <div className="size-3.5" />
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate">
-                {agent.name}
-              </div>
+              <div className="font-medium text-sm truncate">{agent.name}</div>
               {agent.description && (
                 <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                   {agent.description}
@@ -145,7 +161,7 @@ export function AgentSelector({
             </div>
           </DropdownMenuItem>
         ))}
-        
+
         {onManageAgents && (
           <>
             <DropdownMenuSeparator />

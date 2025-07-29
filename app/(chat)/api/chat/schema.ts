@@ -18,26 +18,42 @@ const stepStartPartSchema = z.object({
 });
 
 const toolPartSchema = z.object({
-  type: z.enum(['tool-createDocument', 'tool-updateDocument', 'tool-requestSuggestions', 'tool-getWeather']), // Known tool types
+  type: z.enum([
+    'tool-createDocument',
+    'tool-updateDocument',
+    'tool-requestSuggestions',
+    'tool-getWeather',
+  ]), // Known tool types
   toolCallId: z.string().optional(),
-  state: z.enum(['partial-call', 'call', 'result', 'output-available']).optional(),
+  state: z
+    .enum(['partial-call', 'call', 'result', 'output-available'])
+    .optional(),
   input: z.any().optional(),
   output: z.any().optional(),
 });
 
-const partSchema = z.union([textPartSchema, filePartSchema, stepStartPartSchema, toolPartSchema]);
+const partSchema = z.union([
+  textPartSchema,
+  filePartSchema,
+  stepStartPartSchema,
+  toolPartSchema,
+]);
 
 // AI SDK v5 request structure - body fields may or may not be at top level
 const aiSdkRequestSchema = z.object({
   id: z.string().uuid(),
-  messages: z.array(z.object({
-    id: z.string().uuid(),
-    role: z.enum(['user', 'assistant']), // AI SDK v5 sends full conversation history
-    parts: z.array(partSchema),
-    metadata: z.object({
-      createdAt: z.string().optional(),
-    }).optional(), // AI SDK can include metadata with timestamps
-  })),
+  messages: z.array(
+    z.object({
+      id: z.string().uuid(),
+      role: z.enum(['user', 'assistant']), // AI SDK v5 sends full conversation history
+      parts: z.array(partSchema),
+      metadata: z
+        .object({
+          createdAt: z.string().optional(),
+        })
+        .optional(), // AI SDK can include metadata with timestamps
+    }),
+  ),
   // These fields from useChat body might not always be present
   selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']).optional(),
   selectedVisibilityType: z.enum(['public', 'private']).optional(),
