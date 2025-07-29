@@ -65,14 +65,14 @@ export async function POST(request: Request) {
   let json: any;
   try {
     json = await request.json();
-    console.log('🔍 Raw request body:', JSON.stringify(json, null, 2));
-    console.log('🔍 Request body keys:', Object.keys(json));
-    console.log(
-      '🔍 Request body types:',
-      Object.fromEntries(
-        Object.entries(json).map(([key, value]) => [key, typeof value]),
-      ),
-    );
+    // console.log('🔍 Raw request body:', JSON.stringify(json, null, 2));
+    // console.log('🔍 Request body keys:', Object.keys(json));
+    // console.log(
+    //   '🔍 Request body types:',
+    //   Object.fromEntries(
+    //     Object.entries(json).map(([key, value]) => [key, typeof value]),
+    //   ),
+    // );
     console.log('🔍 selectedAgentId value:', json.selectedAgentId);
     console.log('🔍 selectedAgentId type:', typeof json.selectedAgentId);
   } catch (error) {
@@ -98,14 +98,155 @@ export async function POST(request: Request) {
     if (legacyResult.success) {
       console.log('✅ Legacy schema validation passed');
       requestData = legacyResult.data;
-      message = requestData.message;
+
+      message = `Answer the following message in the style detailed in your system prompt: ${requestData.message}`;
     } else {
-      console.error('❌ Both schema validations failed:', {
-        aiSdkErrors: aiSdkResult.error.format(),
-        legacyErrors: legacyResult.error.format(),
-        receivedData: JSON.stringify(json, null, 2),
-      });
-      return new ChatSDKError('bad_request:api').toResponse();
+      // Create detailed validation error information for debugging
+      const aiSdkIssues = aiSdkResult.error.issues.map((issue) => ({
+        path: issue.path.join('.') || 'root',
+        message: issue.message,
+        code: issue.code,
+        received: 'received' in issue ? issue.received : undefined,
+        expected: 'expected' in issue ? issue.expected : undefined,
+      }));
+
+      const legacyIssues = legacyResult.error.issues.map((issue) => ({
+        path: issue.path.join('.') || 'root',
+        message: issue.message,
+        code: issue.code,
+        received: 'received' in issue ? issue.received : undefined,
+        expected: 'expected' in issue ? issue.expected : undefined,
+      }));
+
+      // Log comprehensive debugging information
+      console.error(
+        '❌ Schema validation failed for both AI SDK v2 and legacy formats:',
+        {
+          requestId: json.id || 'unknown',
+          timestamp: new Date().toISOString(),
+          receivedKeys: Object.keys(json),
+          dataStructure: {
+            hasId: !!json.id,
+            idType: typeof json.id,
+            hasMessages: !!json.messages,
+            messagesCount: Array.isArray(json.messages)
+              ? json.messages.length
+              : 0,
+            hasLegacyMessage: !!json.message,
+            messagePartsCount: json.message?.parts?.length || 0,
+            selectedChatModel: json.selectedChatModel,
+            selectedAgentId: json.selectedAgentId,
+          },
+          validationResults: {
+            aiSdkValidation: {
+              totalIssues: aiSdkIssues.length,
+              issues: aiSdkIssues,
+              criticalPaths: aiSdkIssues.filter(
+                (i) =>
+                  i.path.includes('id') ||
+                  i.path.includes('messages') ||
+                  i.path.includes('parts'),
+              ),
+            },
+            legacyValidation: {
+              totalIssues: legacyIssues.length,
+              issues: legacyIssues,
+              criticalPaths: legacyIssues.filter(
+                (i) =>
+                  i.path.includes('id') ||
+                  i.path.includes('message') ||
+                  i.path.includes('parts'),
+              ),
+            },
+          },
+          commonProblems: {
+            invalidId:
+              json.id &&
+              (typeof json.id !== 'string' ||
+                !json.id.match(
+                  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+                )),
+            missingMessages: !json.messages && !json.message,
+            invalidMessageStructure:
+              json.message &&
+              (!json.message.id ||
+                !json.message.parts ||
+                !Array.isArray(json.message.parts)),
+            invalidMessagesArray:
+              json.messages &&
+              (!Array.isArray(json.messages) ||
+                json.messages.some((m: any) => !m.id || !m.parts)),
+            emptyMessageParts:
+              json.message?.parts?.length === 0 ||
+              json.messages?.some((m: any) => m.parts?.length === 0),
+            invalidChatModel:
+              json.selectedChatModel &&
+              !['chat-model', 'chat-model-reasoning'].includes(
+                json.selectedChatModel,
+              ),
+            invalidAgentId:
+              json.selectedAgentId &&
+              (typeof json.selectedAgentId !== 'string' ||
+                !json.selectedAgentId.match(
+                  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+                )),
+          },
+        },
+      );
+
+      // Create user-friendly error message based on specific validation failures
+      const allIssues = [...aiSdkIssues, ...legacyIssues];
+      const userErrorDetails: string[] = [];
+
+      // Analyze specific issues to provide actionable feedback
+      if (
+        allIssues.some(
+          (i) => i.path.includes('id') && i.code === 'invalid_string',
+        )
+      ) {
+        userErrorDetails.push('Invalid chat ID format - must be a valid UUID');
+      } else if (allIssues.some((i) => i.path.includes('id'))) {
+        userErrorDetails.push('Missing or invalid chat ID');
+      }
+
+      if (
+        allIssues.some(
+          (i) =>
+            i.path.includes('message.parts') || i.path.includes('messages'),
+        )
+      ) {
+        userErrorDetails.push(
+          'Invalid message format - messages must contain valid content',
+        );
+      }
+
+      if (allIssues.some((i) => i.path.includes('selectedChatModel'))) {
+        userErrorDetails.push('Invalid chat model selection');
+      }
+
+      if (
+        allIssues.some(
+          (i) =>
+            i.path.includes('selectedAgentId') && i.code === 'invalid_string',
+        )
+      ) {
+        userErrorDetails.push('Invalid agent ID format - must be a valid UUID');
+      }
+
+      if (
+        allIssues.some(
+          (i) => i.path.includes('parts') && i.message.includes('array'),
+        )
+      ) {
+        userErrorDetails.push('Message content is malformed');
+      }
+
+      const userMessage =
+        userErrorDetails.length > 0
+          ? `Request validation failed: ${userErrorDetails.join(', ')}`
+          : 'Request format is invalid - please check your input and try again';
+
+      return new ChatSDKError('bad_request:api', userMessage).toResponse();
     }
   }
 
@@ -186,16 +327,16 @@ export async function POST(request: Request) {
       console.log('🤖 Attempting to load agent:', selectedAgentId);
       try {
         const agent = await getAgentById({ id: selectedAgentId });
-        console.log('🤖 Agent retrieved from DB:', {
-          found: !!agent,
-          agentId: agent?.id,
-          agentName: agent?.name,
-          agentUserId: agent?.userId,
-          sessionUserId: session.user.id,
-          userMatch: agent?.userId === session.user.id,
-          modelId: agent?.modelId,
-          systemPromptLength: agent?.systemPrompt?.length,
-        });
+        // console.log('🤖 Agent retrieved from DB:', {
+        //   found: !!agent,
+        //   agentId: agent?.id,
+        //   agentName: agent?.name,
+        //   agentUserId: agent?.userId,
+        //   sessionUserId: session.user.id,
+        //   userMatch: agent?.userId === session.user.id,
+        //   modelId: agent?.modelId,
+        //   systemPromptLength: agent?.systemPrompt?.length,
+        // });
 
         if (!agent) {
           console.warn('❌ Agent not found in database:', selectedAgentId);

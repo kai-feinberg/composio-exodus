@@ -1,0 +1,15 @@
+
+> ai-chatbot@3.1.0 dev /Users/kai/Desktop/projects/horde-ai
+> next dev --turbo
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+   ▲ Next.js 15.3.0-canary.31 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://10.0.0.75:3001
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ ppr
+
+ ✓ Starting...
+ ✓ Compiled in 361ms
+ ✓ Ready in 987ms

@@ -34,6 +34,9 @@ const aiSdkRequestSchema = z.object({
     id: z.string().uuid(),
     role: z.enum(['user', 'assistant']), // AI SDK v5 sends full conversation history
     parts: z.array(partSchema),
+    metadata: z.object({
+      createdAt: z.string().optional(),
+    }).optional(), // AI SDK can include metadata with timestamps
   })),
   // These fields from useChat body might not always be present
   selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']).optional(),

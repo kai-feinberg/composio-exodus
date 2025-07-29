@@ -1,8 +1,11 @@
 # Priorities
 
-- switch agent from within artifacts view
+fix generation with system prompt
+
+- system prompt and artifact work together
+  test long system prompts
+
 - upload/chat with text files
-  ensure system prompts can be 50+ pages (load in from files stored in vercel blob)
 - agents with uploaded system prompts
 
 ## Features
