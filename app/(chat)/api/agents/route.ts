@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { requireOrgAdmin, getActiveOrganization } from '@/lib/organization';
 import { createAgent, getAgentsByUserId } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
@@ -18,12 +19,25 @@ export async function GET() {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const agents = await getAgentsByUserId({ userId: session.user.id });
+    // Check admin access
+    await requireOrgAdmin();
+    
+    const orgId = await getActiveOrganization();
+    if (!orgId) {
+      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+    }
+
+    // Get agents scoped to the organization
+    const agents = await getAgentsByUserId({ userId: session.user.id, organizationId: orgId });
 
     return Response.json({ agents }, { status: 200 });
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
+    }
+
+    if (error instanceof Error && error.message.includes('Admin access required')) {
+      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
     }
 
     return new ChatSDKError(
@@ -41,6 +55,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Check admin access
+    await requireOrgAdmin();
+    
+    const orgId = await getActiveOrganization();
+    if (!orgId) {
+      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+    }
     const json = await request.json();
 
     // Use safeParse for better error handling
@@ -126,12 +147,17 @@ export async function POST(request: Request) {
     const agent = await createAgent({
       ...validatedData,
       userId: session.user.id,
+      organizationId: orgId,
     });
 
     return Response.json({ agent }, { status: 201 });
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
+    }
+
+    if (error instanceof Error && error.message.includes('Admin access required')) {
+      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
     }
 
     console.error('❌ Agent creation failed:', {

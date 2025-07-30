@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Crown } from 'lucide-react';
 import Image from 'next/image';
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useClerk, useUser, useAuth } from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
 
 import {
@@ -31,6 +31,8 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
   const { signOut } = useClerk();
   const { user, isLoaded } = useUser();
   const { setTheme, resolvedTheme } = useTheme();
+  const { has } = useAuth();
+  const isAdmin = has?.({ role: 'org:admin' }) ?? false;
 
   return (
     <SidebarMenu>
@@ -52,20 +54,32 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
             ) : (
               <SidebarMenuButton
                 data-testid="user-nav-button"
-                className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
+                className={`data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10 ${
+                  isAdmin ? 'ring-2 ring-yellow-500/50 border-yellow-500/30' : ''
+                }`}
               >
-                <Image
-                  src={
-                    user?.imageUrl ||
-                    `https://avatar.vercel.sh/${user?.emailAddresses[0]?.emailAddress}`
-                  }
-                  alt={user?.emailAddresses[0]?.emailAddress ?? 'User Avatar'}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
+                <div className="relative">
+                  <Image
+                    src={
+                      user?.imageUrl ||
+                      `https://avatar.vercel.sh/${user?.emailAddresses[0]?.emailAddress}`
+                    }
+                    alt={user?.emailAddresses[0]?.emailAddress ?? 'User Avatar'}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  {isAdmin && (
+                    <Crown className="absolute -top-1 -right-1 size-3 text-yellow-500 fill-yellow-500" />
+                  )}
+                </div>
                 <span data-testid="user-email" className="truncate">
                   {user?.emailAddresses[0]?.emailAddress}
+                  {isAdmin && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-md font-medium">
+                      Admin
+                    </span>
+                  )}
                 </span>
                 <ChevronUp className="ml-auto" />
               </SidebarMenuButton>

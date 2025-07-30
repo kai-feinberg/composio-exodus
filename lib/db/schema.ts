@@ -15,6 +15,7 @@ export const user = pgTable('User', {
   id: varchar('id', { length: 255 }).primaryKey().notNull(), // Clerk user IDs are strings
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
+  organizationId: varchar('organizationId', { length: 255 }), // Clerk organization ID
 });
 
 export type User = InferSelectModel<typeof user>;
@@ -26,6 +27,7 @@ export const chat = pgTable('Chat', {
   userId: varchar('userId', { length: 255 })
     .notNull()
     .references(() => user.id),
+  organizationId: varchar('organizationId', { length: 255 }), // Organization scope
   visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('private'),
@@ -115,6 +117,7 @@ export const document = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => user.id),
+    organizationId: varchar('organizationId', { length: 255 }), // Organization scope
   },
   (table) => {
     return {
@@ -178,6 +181,7 @@ export const agent = pgTable('Agent', {
   userId: varchar('userId', { length: 255 })
     .notNull()
     .references(() => user.id),
+  organizationId: varchar('organizationId', { length: 255 }), // Organization scope
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });

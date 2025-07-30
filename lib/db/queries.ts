@@ -549,12 +549,14 @@ export async function createAgent({
   systemPrompt,
   modelId,
   userId,
+  organizationId,
 }: {
   name: string;
   description?: string;
   systemPrompt: string;
   modelId: string;
   userId: string;
+  organizationId?: string;
 }) {
   try {
     const [createdAgent] = await db
@@ -565,6 +567,7 @@ export async function createAgent({
         systemPrompt,
         modelId,
         userId,
+        organizationId,
       })
       .returning();
 
@@ -574,12 +577,23 @@ export async function createAgent({
   }
 }
 
-export async function getAgentsByUserId({ userId }: { userId: string }) {
+export async function getAgentsByUserId({ 
+  userId, 
+  organizationId 
+}: { 
+  userId: string;
+  organizationId?: string;
+}) {
   try {
+    // If organizationId is provided, filter by organization, otherwise by userId for backward compatibility
+    const whereCondition = organizationId 
+      ? eq(agent.organizationId, organizationId)
+      : eq(agent.userId, userId);
+      
     return await db
       .select()
       .from(agent)
-      .where(eq(agent.userId, userId))
+      .where(whereCondition)
       .orderBy(desc(agent.createdAt));
   } catch (error) {
     throw new ChatSDKError(

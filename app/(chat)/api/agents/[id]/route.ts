@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { requireOrgAdmin, getActiveOrganization } from '@/lib/organization';
 import { getAgentById, updateAgent, deleteAgent } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
@@ -22,21 +23,33 @@ export async function GET(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
+    // Check admin access
+    await requireOrgAdmin();
+    
+    const orgId = await getActiveOrganization();
+    if (!orgId) {
+      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+    }
+
     const agent = await getAgentById({ id });
 
     if (!agent) {
       return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
-    // Check if user owns this agent
-    if (agent.userId !== session.user.id) {
-      return new ChatSDKError('forbidden:chat').toResponse();
+    // Check if agent belongs to the organization
+    if (agent.organizationId !== orgId) {
+      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
     }
 
     return Response.json({ agent }, { status: 200 });
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
+    }
+
+    if (error instanceof Error && error.message.includes('Admin access required')) {
+      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
     }
 
     return new ChatSDKError(
@@ -58,15 +71,23 @@ export async function PUT(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    // Check if agent exists and user owns it
+    // Check admin access
+    await requireOrgAdmin();
+    
+    const orgId = await getActiveOrganization();
+    if (!orgId) {
+      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+    }
+
+    // Check if agent exists and belongs to organization
     const existingAgent = await getAgentById({ id });
 
     if (!existingAgent) {
       return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
-    if (existingAgent.userId !== session.user.id) {
-      return new ChatSDKError('forbidden:chat').toResponse();
+    if (existingAgent.organizationId !== orgId) {
+      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
     }
 
     const json = await request.json();
@@ -90,6 +111,10 @@ export async function PUT(
       return error.toResponse();
     }
 
+    if (error instanceof Error && error.message.includes('Admin access required')) {
+      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    }
+
     return new ChatSDKError(
       'bad_request:api',
       'Failed to update agent',
@@ -109,15 +134,23 @@ export async function DELETE(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    // Check if agent exists and user owns it
+    // Check admin access
+    await requireOrgAdmin();
+    
+    const orgId = await getActiveOrganization();
+    if (!orgId) {
+      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+    }
+
+    // Check if agent exists and belongs to organization
     const existingAgent = await getAgentById({ id });
 
     if (!existingAgent) {
       return new ChatSDKError('not_found:chat', 'Agent not found').toResponse();
     }
 
-    if (existingAgent.userId !== session.user.id) {
-      return new ChatSDKError('forbidden:chat').toResponse();
+    if (existingAgent.organizationId !== orgId) {
+      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
     }
 
     const agent = await deleteAgent({ id });
@@ -126,6 +159,10 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
+    }
+
+    if (error instanceof Error && error.message.includes('Admin access required')) {
+      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
     }
 
     return new ChatSDKError(

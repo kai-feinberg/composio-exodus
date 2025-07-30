@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Check, ChevronDown, Bot, Settings } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -29,19 +30,25 @@ export function AgentSelector({
   onManageAgents,
   disabled = false,
 }: AgentSelectorProps) {
+  const { has } = useAuth();
+  const isAdmin = has?.({ role: 'org:admin' }) ?? false;
+  
+  // Use admin endpoint for admins, browse endpoint for regular users
+  const apiEndpoint = isAdmin ? '/api/agents' : '/api/agents/browse';
+  
   const { data, error, mutate } = useSWR<{ agents: Agent[] }>(
-    '/api/agents',
+    apiEndpoint,
     fetcher,
   );
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize default agents if none exist
+  // Initialize default agents if none exist (admin only)
   useEffect(() => {
     if (!data || isInitialized) return;
 
-    if (data.agents.length === 0) {
-      // Initialize default agents
+    if (data.agents.length === 0 && isAdmin) {
+      // Initialize default agents (only for admins)
       fetch('/api/agents/initialize', {
         method: 'POST',
       })
@@ -57,7 +64,7 @@ export function AgentSelector({
     } else {
       setIsInitialized(true);
     }
-  }, [data, mutate, isInitialized]);
+  }, [data, mutate, isInitialized, isAdmin]);
 
   const agents = data?.agents || [];
   const selectedAgent =
@@ -162,7 +169,7 @@ export function AgentSelector({
           </DropdownMenuItem>
         ))}
 
-        {onManageAgents && (
+        {onManageAgents && isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem

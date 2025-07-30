@@ -2,6 +2,7 @@
 
 import type { User } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { useAuth , OrganizationSwitcher, Protect } from '@clerk/nextjs';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -19,11 +20,12 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Bot } from 'lucide-react';
+import { Bot, } from 'lucide-react';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { has } = useAuth();
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
@@ -60,6 +62,23 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             </Tooltip>
           </div>
         </SidebarMenu>
+        
+        {/* Organization Switcher */}
+        {user && (
+          <div className="px-2 py-1">
+            <OrganizationSwitcher
+              appearance={{
+                elements: {
+                  organizationSwitcherTrigger: 'w-full justify-start text-sm',
+                  organizationSwitcherTriggerIcon: 'size-4',
+                },
+              }}
+              hidePersonal={false}
+              createOrganizationMode="modal"
+              organizationProfileMode="modal"
+            />
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarHistory user={user} />
@@ -68,18 +87,35 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         {user && (
           <>
             <SidebarMenu>
+              {/* Browse agents - available to all users */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    href="/agents"
+                    href="/agents/browse"
                     onClick={() => setOpenMobile(false)}
                     className="flex items-center gap-2"
                   >
                     <Bot className="size-4" />
-                    <span>Manage Agents</span>
+                    <span>Browse Agents</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {/* Admin-only agent management */}
+              <Protect role="org:admin" fallback={null}>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link
+                      href="/agents"
+                      onClick={() => setOpenMobile(false)}
+                      className="flex items-center gap-2"
+                    >
+                      <Bot className="size-4" />
+                      <span>Manage Agents</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Protect>
             </SidebarMenu>
             <SidebarUserNav user={user} />
           </>
