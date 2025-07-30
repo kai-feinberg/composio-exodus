@@ -6,7 +6,7 @@ import {
   stepCountIs,
   streamText,
 } from 'ai';
-import { auth, type UserType } from '@/lib/auth';
+import { auth, type UserType, ensureUserExists } from '@/lib/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
@@ -27,7 +27,7 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
-import { aiSdkRequestSchema, postRequestBodySchema } from './schema';
+import { aiSdkRequestSchema } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
   createResumableStreamContext,
@@ -83,172 +83,100 @@ export async function POST(request: Request) {
     return new ChatSDKError('bad_request:api').toResponse();
   }
 
-  // Try AI SDK v2 schema first, then fall back to legacy
-  let requestData: any;
-  let message: any;
-
+  // Validate request with AI SDK v2 schema only
   const aiSdkResult = aiSdkRequestSchema.safeParse(json);
-  if (aiSdkResult.success) {
-    console.log('✅ AI SDK v2 schema validation passed');
-    requestData = aiSdkResult.data;
-    message = requestData.messages.at(-1); // Get the latest message
-  } else {
-    // Try legacy schema
-    const legacyResult = postRequestBodySchema.safeParse(json);
-    if (legacyResult.success) {
-      console.log('✅ Legacy schema validation passed');
-      requestData = legacyResult.data;
+  if (!aiSdkResult.success) {
+    // Create detailed validation error information for debugging
+    const issues = aiSdkResult.error.issues.map((issue) => ({
+      path: issue.path.join('.') || 'root',
+      message: issue.message,
+      code: issue.code,
+      received: 'received' in issue ? issue.received : undefined,
+      expected: 'expected' in issue ? issue.expected : undefined,
+    }));
 
-      message = `Answer the following message in the style detailed in your system prompt: ${requestData.message}`;
-    } else {
-      // Create detailed validation error information for debugging
-      const aiSdkIssues = aiSdkResult.error.issues.map((issue) => ({
-        path: issue.path.join('.') || 'root',
-        message: issue.message,
-        code: issue.code,
-        received: 'received' in issue ? issue.received : undefined,
-        expected: 'expected' in issue ? issue.expected : undefined,
-      }));
-
-      const legacyIssues = legacyResult.error.issues.map((issue) => ({
-        path: issue.path.join('.') || 'root',
-        message: issue.message,
-        code: issue.code,
-        received: 'received' in issue ? issue.received : undefined,
-        expected: 'expected' in issue ? issue.expected : undefined,
-      }));
-
-      // Log comprehensive debugging information
-      console.error(
-        '❌ Schema validation failed for both AI SDK v2 and legacy formats:',
-        {
-          requestId: json.id || 'unknown',
-          timestamp: new Date().toISOString(),
-          receivedKeys: Object.keys(json),
-          dataStructure: {
-            hasId: !!json.id,
-            idType: typeof json.id,
-            hasMessages: !!json.messages,
-            messagesCount: Array.isArray(json.messages)
-              ? json.messages.length
-              : 0,
-            hasLegacyMessage: !!json.message,
-            messagePartsCount: json.message?.parts?.length || 0,
-            selectedChatModel: json.selectedChatModel,
-            selectedAgentId: json.selectedAgentId,
-          },
-          validationResults: {
-            aiSdkValidation: {
-              totalIssues: aiSdkIssues.length,
-              issues: aiSdkIssues,
-              criticalPaths: aiSdkIssues.filter(
-                (i) =>
-                  i.path.includes('id') ||
-                  i.path.includes('messages') ||
-                  i.path.includes('parts'),
-              ),
-            },
-            legacyValidation: {
-              totalIssues: legacyIssues.length,
-              issues: legacyIssues,
-              criticalPaths: legacyIssues.filter(
-                (i) =>
-                  i.path.includes('id') ||
-                  i.path.includes('message') ||
-                  i.path.includes('parts'),
-              ),
-            },
-          },
-          commonProblems: {
-            invalidId:
-              json.id &&
-              (typeof json.id !== 'string' ||
-                !json.id.match(
-                  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-                )),
-            missingMessages: !json.messages && !json.message,
-            invalidMessageStructure:
-              json.message &&
-              (!json.message.id ||
-                !json.message.parts ||
-                !Array.isArray(json.message.parts)),
-            invalidMessagesArray:
-              json.messages &&
-              (!Array.isArray(json.messages) ||
-                json.messages.some((m: any) => !m.id || !m.parts)),
-            emptyMessageParts:
-              json.message?.parts?.length === 0 ||
-              json.messages?.some((m: any) => m.parts?.length === 0),
-            invalidChatModel:
-              json.selectedChatModel &&
-              !['chat-model', 'chat-model-reasoning'].includes(
-                json.selectedChatModel,
-              ),
-            invalidAgentId:
-              json.selectedAgentId &&
-              (typeof json.selectedAgentId !== 'string' ||
-                !json.selectedAgentId.match(
-                  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-                )),
-          },
+    // Log comprehensive debugging information
+    console.error(
+      '❌ AI SDK v2 schema validation failed:',
+      {
+        requestId: json.id || 'unknown',
+        timestamp: new Date().toISOString(),
+        receivedKeys: Object.keys(json),
+        dataStructure: {
+          hasId: !!json.id,
+          idType: typeof json.id,
+          hasMessages: !!json.messages,
+          messagesCount: Array.isArray(json.messages)
+            ? json.messages.length
+            : 0,
+          selectedChatModel: json.selectedChatModel,
+          selectedAgentId: json.selectedAgentId,
         },
-      );
+        validationResults: {
+          totalIssues: issues.length,
+          issues: issues,
+          criticalPaths: issues.filter(
+            (i) =>
+              i.path.includes('id') ||
+              i.path.includes('messages') ||
+              i.path.includes('parts'),
+          ),
+        },
+      },
+    );
 
-      // Create user-friendly error message based on specific validation failures
-      const allIssues = [...aiSdkIssues, ...legacyIssues];
-      const userErrorDetails: string[] = [];
+    // Create user-friendly error message based on specific validation failures
+    const userErrorDetails: string[] = [];
 
-      // Analyze specific issues to provide actionable feedback
-      if (
-        allIssues.some(
-          (i) => i.path.includes('id') && i.code === 'invalid_string',
-        )
-      ) {
-        userErrorDetails.push('Invalid chat ID format - must be a valid UUID');
-      } else if (allIssues.some((i) => i.path.includes('id'))) {
-        userErrorDetails.push('Missing or invalid chat ID');
-      }
-
-      if (
-        allIssues.some(
-          (i) =>
-            i.path.includes('message.parts') || i.path.includes('messages'),
-        )
-      ) {
-        userErrorDetails.push(
-          'Invalid message format - messages must contain valid content',
-        );
-      }
-
-      if (allIssues.some((i) => i.path.includes('selectedChatModel'))) {
-        userErrorDetails.push('Invalid chat model selection');
-      }
-
-      if (
-        allIssues.some(
-          (i) =>
-            i.path.includes('selectedAgentId') && i.code === 'invalid_string',
-        )
-      ) {
-        userErrorDetails.push('Invalid agent ID format - must be a valid UUID');
-      }
-
-      if (
-        allIssues.some(
-          (i) => i.path.includes('parts') && i.message.includes('array'),
-        )
-      ) {
-        userErrorDetails.push('Message content is malformed');
-      }
-
-      const userMessage =
-        userErrorDetails.length > 0
-          ? `Request validation failed: ${userErrorDetails.join(', ')}`
-          : 'Request format is invalid - please check your input and try again';
-
-      return new ChatSDKError('bad_request:api', userMessage).toResponse();
+    // Analyze specific issues to provide actionable feedback
+    if (
+      issues.some(
+        (i) => i.path.includes('id') && i.code === 'invalid_string',
+      )
+    ) {
+      userErrorDetails.push('Invalid chat ID format - must be a valid UUID');
+    } else if (issues.some((i) => i.path.includes('id'))) {
+      userErrorDetails.push('Missing or invalid chat ID');
     }
+
+    if (issues.some((i) => i.path.includes('messages'))) {
+      userErrorDetails.push(
+        'Invalid message format - messages must contain valid content',
+      );
+    }
+
+    if (issues.some((i) => i.path.includes('selectedChatModel'))) {
+      userErrorDetails.push('Invalid chat model selection');
+    }
+
+    if (
+      issues.some(
+        (i) =>
+          i.path.includes('selectedAgentId') && i.code === 'invalid_string',
+      )
+    ) {
+      userErrorDetails.push('Invalid agent ID format - must be a valid UUID');
+    }
+
+    if (
+      issues.some(
+        (i) => i.path.includes('parts') && i.message.includes('array'),
+      )
+    ) {
+      userErrorDetails.push('Message content is malformed');
+    }
+
+    const userMessage =
+      userErrorDetails.length > 0
+        ? `Request validation failed: ${userErrorDetails.join(', ')}`
+        : 'Request format is invalid - please check your input and try again';
+
+    return new ChatSDKError('bad_request:api', userMessage).toResponse();
   }
+
+  console.log('✅ AI SDK v2 schema validation passed');
+  const requestData = aiSdkResult.data;
+  const message = requestData.messages.at(-1); // Get the latest message
 
   try {
     const {
@@ -278,6 +206,9 @@ export async function POST(request: Request) {
     }
 
     const userType: UserType = session.user.type;
+
+    // Ensure user exists in database before proceeding
+    await ensureUserExists(session.user.id, session.user.organizationId);
 
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
@@ -340,10 +271,11 @@ export async function POST(request: Request) {
 
         if (!agent) {
           console.warn('❌ Agent not found in database:', selectedAgentId);
-        } else if (agent.userId !== session.user.id) {
-          console.warn('❌ Agent belongs to different user:', {
+        } else if (agent.userId !== session.user.id && !agent.isGlobal) {
+          console.warn('❌ Agent belongs to different user and is not global:', {
             agentUserId: agent.userId,
             sessionUserId: session.user.id,
+            isGlobal: agent.isGlobal,
           });
         } else {
           agentSystemPrompt = agent.systemPrompt;
@@ -351,6 +283,9 @@ export async function POST(request: Request) {
           console.log('✅ Agent configuration applied:', {
             agentName: agent.name,
             effectiveChatModel,
+            isGlobal: agent.isGlobal,
+            ownerUserId: agent.userId,
+            currentUserId: session.user.id,
             systemPromptPreview: `${agentSystemPrompt.slice(0, 100)}...`,
           });
         }

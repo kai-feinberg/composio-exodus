@@ -1,4 +1,12 @@
 import { auth as clerkAuth } from '@clerk/nextjs/server';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { eq } from 'drizzle-orm';
+import { user } from './db/schema';
+
+// biome-ignore lint: Forbidden non-null assertion.
+const client = postgres(process.env.POSTGRES_URL!);
+const db = drizzle(client);
 
 export type UserType = 'regular';
 export type OrgRole = 'org:admin' | 'org:member';
@@ -49,4 +57,23 @@ export async function requireOrgAdmin(): Promise<void> {
 export async function getActiveOrganization(): Promise<string | null> {
   const { orgId } = await clerkAuth();
   return orgId ?? null;
+}
+
+// User synchronization with database
+export async function ensureUserExists(clerkUserId: string, organizationId?: string | null): Promise<void> {
+  try {
+    const existingUser = await db.select().from(user).where(eq(user.id, clerkUserId));
+    
+    if (existingUser.length === 0) {
+      await db.insert(user).values({
+        id: clerkUserId,
+        email: `${clerkUserId}@clerk.local`, // Placeholder email, will be updated when needed
+        organizationId,
+      });
+      console.log('✅ Created user record for Clerk user:', clerkUserId);
+    }
+  } catch (error) {
+    console.error('❌ Failed to ensure user exists:', error);
+    throw error;
+  }
 }

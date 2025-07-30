@@ -61,21 +61,7 @@ const aiSdkRequestSchema = z.object({
   trigger: z.string().optional(), // AI SDK adds this
 });
 
-// Legacy schema for backwards compatibility
-export const postRequestBodySchema = z.object({
-  id: z.string().uuid(),
-  message: z.object({
-    id: z.string().uuid(),
-    role: z.enum(['user']),
-    parts: z.array(partSchema),
-  }),
-  selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']),
-  selectedVisibilityType: z.enum(['public', 'private']),
-  selectedAgentId: z.string().uuid().optional(),
-});
-
-// Export both schemas
+// Export the AI SDK v2 schema
 export { aiSdkRequestSchema };
 
-export type PostRequestBody = z.infer<typeof postRequestBodySchema>;
 export type AiSdkRequestBody = z.infer<typeof aiSdkRequestSchema>;

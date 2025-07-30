@@ -1,16 +1,16 @@
 # Priorities
 
-fix generation with system prompt
-
-- system prompt and artifact work together
-  test long system prompts
-
-- upload/chat with text files
-- agents with uploaded system prompts
-
-## Features
+fix generations and message saving for everyone.
 
 - llm switching via llm gateway
+  get observability up
+
+remove use agent feature button
+make account switcher
+
+upload and chat with text prompts
+
+## Features
 
 - let people search via combobox for agents
 - let ppl toggle which agents they see

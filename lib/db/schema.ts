@@ -114,7 +114,7 @@ export const document = pgTable(
     kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
       .notNull()
       .default('text'),
-    userId: uuid('userId')
+    userId: varchar('userId', { length: 255 })
       .notNull()
       .references(() => user.id),
     organizationId: varchar('organizationId', { length: 255 }), // Organization scope
@@ -138,7 +138,7 @@ export const suggestion = pgTable(
     suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId')
+    userId: varchar('userId', { length: 255 })
       .notNull()
       .references(() => user.id),
     createdAt: timestamp('createdAt').notNull(),
@@ -182,6 +182,7 @@ export const agent = pgTable('Agent', {
     .notNull()
     .references(() => user.id),
   organizationId: varchar('organizationId', { length: 255 }), // Organization scope
+  isGlobal: boolean('isGlobal').notNull().default(false), // Global agents can be used by any user
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });

@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  or,
   type SQL,
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -550,6 +551,7 @@ export async function createAgent({
   modelId,
   userId,
   organizationId,
+  isGlobal = true,
 }: {
   name: string;
   description?: string;
@@ -557,6 +559,7 @@ export async function createAgent({
   modelId: string;
   userId: string;
   organizationId?: string;
+  isGlobal?: boolean;
 }) {
   try {
     const [createdAgent] = await db
@@ -568,6 +571,7 @@ export async function createAgent({
         modelId,
         userId,
         organizationId,
+        isGlobal,
       })
       .returning();
 
@@ -585,10 +589,16 @@ export async function getAgentsByUserId({
   organizationId?: string;
 }) {
   try {
-    // If organizationId is provided, filter by organization, otherwise by userId for backward compatibility
+    // Get agents owned by user/organization AND global agents
     const whereCondition = organizationId 
-      ? eq(agent.organizationId, organizationId)
-      : eq(agent.userId, userId);
+      ? or(
+          eq(agent.organizationId, organizationId),
+          eq(agent.isGlobal, true)
+        )
+      : or(
+          eq(agent.userId, userId),
+          eq(agent.isGlobal, true)
+        );
       
     return await db
       .select()
@@ -619,12 +629,14 @@ export async function updateAgent({
   description,
   systemPrompt,
   modelId,
+  isGlobal,
 }: {
   id: string;
   name?: string;
   description?: string;
   systemPrompt?: string;
   modelId?: string;
+  isGlobal?: boolean;
 }) {
   try {
     const updateData: any = { updatedAt: new Date() };
@@ -633,6 +645,7 @@ export async function updateAgent({
     if (description !== undefined) updateData.description = description;
     if (systemPrompt !== undefined) updateData.systemPrompt = systemPrompt;
     if (modelId !== undefined) updateData.modelId = modelId;
+    if (isGlobal !== undefined) updateData.isGlobal = isGlobal;
 
     const [updatedAgent] = await db
       .update(agent)

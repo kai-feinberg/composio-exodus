@@ -64,6 +64,20 @@
       "when": 1753844599306,
       "tag": "0008_steady_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1753847113473,
+      "tag": "0009_thin_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1753848032414,
+      "tag": "0010_classy_nicolaos",
+      "breakpoints": true
     }
   ]
 }

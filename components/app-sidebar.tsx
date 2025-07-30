@@ -102,7 +102,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </SidebarMenuItem>
               
               {/* Admin-only agent management */}
-              <Protect role="org:admin" fallback={null}>
+              <Protect fallback={null}>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link
