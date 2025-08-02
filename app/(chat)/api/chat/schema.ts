@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SUPPORTED_MODEL_IDS } from '@/lib/ai/models';
 
 const textPartSchema = z.object({
   type: z.enum(['text']),
@@ -55,7 +56,10 @@ const aiSdkRequestSchema = z.object({
     }),
   ),
   // These fields from useChat body might not always be present
-  selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']).optional(),
+  selectedChatModel: z.string().refine(
+    (val) => SUPPORTED_MODEL_IDS.includes(val as any),
+    { message: `Must be one of: ${SUPPORTED_MODEL_IDS.join(', ')}` }
+  ).optional(),
   selectedVisibilityType: z.enum(['public', 'private']).optional(),
   selectedAgentId: z.string().uuid().optional(),
   trigger: z.string().optional(), // AI SDK adds this

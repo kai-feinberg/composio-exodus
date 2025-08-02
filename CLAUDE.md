@@ -22,6 +22,7 @@ pnpm build
 pnpm lint           # ESLint + Biome lint with auto-fix
 pnpm lint:fix       # ESLint fix + Biome lint with auto-fix
 pnpm format         # Biome format
+pnpm tsc            # run typescript compiler (check for TS type errors)
 
 # Database operations
 pnpm db:generate    # Generate Drizzle schema
@@ -45,7 +46,7 @@ pnpm test           # Run Playwright e2e tests
 - **App Router**: Next.js 15 with React Server Components and Server Actions
 - **Database**: PostgreSQL with Drizzle ORM, schema versioning (Message_v2, Vote_v2)
 - **Authentication**: NextAuth.js (Auth.js) with email/password
-- **AI Provider**: xAI Grok models (configurable via `lib/ai/providers.ts`)
+- **AI Provider**: Vercel AI Gateway with 100+ models including xAI Grok, OpenAI GPT-4, Anthropic Claude, Google Gemini (configurable via `lib/ai/providers.ts`)
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Code Quality**: Biome for linting/formatting, ESLint for additional checks
 
@@ -63,15 +64,29 @@ pnpm test           # Run Playwright e2e tests
 
 ### AI Models Configuration
 
-The app uses xAI Grok models by default:
+The app now uses Vercel AI Gateway with access to 100+ models:
 
-- `chat-model`: grok-2-vision-1212 (primary chat)
-- `chat-model-reasoning`: grok-3-mini-beta with reasoning middleware
-- `title-model`: grok-2-1212 (chat titles)
-- `artifact-model`: grok-2-1212 (artifact generation)
-- Image model: grok-2-image
+**Default Models:**
 
-Models are configured in `lib/ai/providers.ts` with test mocks available.
+- `chat-model`: xai/grok-2-vision-1212 (primary chat with vision)
+- `chat-model-reasoning`: xai/grok-3-mini-beta with reasoning middleware
+- `title-model`: xai/grok-2-1212 (chat titles)
+- `artifact-model`: xai/grok-2-1212 (artifact generation)
+
+**Additional Gateway Models:**
+
+- `anthropic-claude`: claude-3-5-sonnet-20241022 (complex tasks)
+- `openai-gpt4`: gpt-4o (multimodal flagship)
+- `openai-gpt4-mini`: gpt-4o-mini (fast and cost-effective)
+- `google-gemini`: gemini-pro (advanced reasoning)
+- `meta-llama`: llama-3.1-405b-instruct (Meta's largest model)
+
+**Image Models:**
+
+- `small-model`: xai/grok-2-image
+- `openai-dalle`: dall-e-3
+
+Models are configured in `lib/ai/providers.ts` with gateway integration and xAI fallback.
 
 ### Database Schema
 
@@ -127,3 +142,11 @@ Run tests with `pnpm test` - this sets the PLAYWRIGHT environment variable and r
 - Authentication is required for most features
 - File uploads use Vercel Blob storage
 - Real-time features use streaming responses
+
+## IMPORTANT: Vercel AI SDK v5 docs
+
+- for updated documentation of the library search through aisdk-v5.md in the docs folder
+- if more documentation is needed then use context 7 mcp server
+
+- for example you might do this:
+  Search(pattern: "createDataStream", path: "markdown-docs/aisdk-v5.md", output_mode: "content")

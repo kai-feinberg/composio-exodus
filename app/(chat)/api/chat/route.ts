@@ -35,7 +35,12 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
-import type { ChatModel } from '@/lib/ai/models';
+import { SUPPORTED_MODEL_IDS } from '@/lib/ai/models';
+import { 
+  validateWithDetailedErrors, 
+  logValidationError, 
+  createContextualErrorMessage 
+} from '@/lib/validation';
 
 export const maxDuration = 60;
 
@@ -83,100 +88,50 @@ export async function POST(request: Request) {
     return new ChatSDKError('bad_request:api').toResponse();
   }
 
-  // Validate request with AI SDK v2 schema only
-  const aiSdkResult = aiSdkRequestSchema.safeParse(json);
-  if (!aiSdkResult.success) {
-    // Create detailed validation error information for debugging
-    const issues = aiSdkResult.error.issues.map((issue) => ({
-      path: issue.path.join('.') || 'root',
-      message: issue.message,
-      code: issue.code,
-      received: 'received' in issue ? issue.received : undefined,
-      expected: 'expected' in issue ? issue.expected : undefined,
-    }));
+  // Validate request with AI SDK v2 schema using improved validation
+  const validationResult = validateWithDetailedErrors(
+    aiSdkRequestSchema, 
+    json, 
+    { 
+      prefix: "AI SDK v2 schema validation",
+      context: "Chat API request"
+    }
+  );
 
+  if (!validationResult.success) {
     // Log comprehensive debugging information
-    console.error(
-      '❌ AI SDK v2 schema validation failed:',
-      {
-        requestId: json.id || 'unknown',
-        timestamp: new Date().toISOString(),
+    logValidationError(validationResult.error, {
+      requestId: json.id || 'unknown',
+      endpoint: 'POST /api/chat',
+      additionalData: {
         receivedKeys: Object.keys(json),
         dataStructure: {
           hasId: !!json.id,
           idType: typeof json.id,
           hasMessages: !!json.messages,
-          messagesCount: Array.isArray(json.messages)
-            ? json.messages.length
-            : 0,
+          messagesCount: Array.isArray(json.messages) ? json.messages.length : 0,
           selectedChatModel: json.selectedChatModel,
           selectedAgentId: json.selectedAgentId,
         },
-        validationResults: {
-          totalIssues: issues.length,
-          issues: issues,
-          criticalPaths: issues.filter(
-            (i) =>
-              i.path.includes('id') ||
-              i.path.includes('messages') ||
-              i.path.includes('parts'),
-          ),
-        },
       },
+    });
+
+    // Create user-friendly error message with supported models
+    const userMessage = createContextualErrorMessage(
+      validationResult.error.issues,
+      [...SUPPORTED_MODEL_IDS]
     );
-
-    // Create user-friendly error message based on specific validation failures
-    const userErrorDetails: string[] = [];
-
-    // Analyze specific issues to provide actionable feedback
-    if (
-      issues.some(
-        (i) => i.path.includes('id') && i.code === 'invalid_string',
-      )
-    ) {
-      userErrorDetails.push('Invalid chat ID format - must be a valid UUID');
-    } else if (issues.some((i) => i.path.includes('id'))) {
-      userErrorDetails.push('Missing or invalid chat ID');
-    }
-
-    if (issues.some((i) => i.path.includes('messages'))) {
-      userErrorDetails.push(
-        'Invalid message format - messages must contain valid content',
-      );
-    }
-
-    if (issues.some((i) => i.path.includes('selectedChatModel'))) {
-      userErrorDetails.push('Invalid chat model selection');
-    }
-
-    if (
-      issues.some(
-        (i) =>
-          i.path.includes('selectedAgentId') && i.code === 'invalid_string',
-      )
-    ) {
-      userErrorDetails.push('Invalid agent ID format - must be a valid UUID');
-    }
-
-    if (
-      issues.some(
-        (i) => i.path.includes('parts') && i.message.includes('array'),
-      )
-    ) {
-      userErrorDetails.push('Message content is malformed');
-    }
-
-    const userMessage =
-      userErrorDetails.length > 0
-        ? `Request validation failed: ${userErrorDetails.join(', ')}`
-        : 'Request format is invalid - please check your input and try again';
 
     return new ChatSDKError('bad_request:api', userMessage).toResponse();
   }
 
   console.log('✅ AI SDK v2 schema validation passed');
-  const requestData = aiSdkResult.data;
+  const requestData = validationResult.data;
   const message = requestData.messages.at(-1); // Get the latest message
+  
+  if (!message) {
+    return new ChatSDKError('bad_request:api', 'No message found in request').toResponse();
+  }
 
   try {
     const {
@@ -223,7 +178,7 @@ export async function POST(request: Request) {
 
     if (!chat) {
       const title = await generateTitleFromUserMessage({
-        message,
+        message: message as any, // Type assertion for gateway compatibility
       });
 
       await saveChat({
@@ -252,7 +207,7 @@ export async function POST(request: Request) {
 
     // Get agent configuration if provided
     let agentSystemPrompt: string | undefined;
-    let effectiveChatModel = selectedChatModel;
+    let effectiveChatModel: string = selectedChatModel;
 
     if (selectedAgentId) {
       console.log('🤖 Attempting to load agent:', selectedAgentId);
@@ -279,10 +234,12 @@ export async function POST(request: Request) {
           });
         } else {
           agentSystemPrompt = agent.systemPrompt;
-          effectiveChatModel = agent.modelId as ChatModel['id'];
+          effectiveChatModel = agent.modelId as string;
           console.log('✅ Agent configuration applied:', {
+            agentId: selectedAgentId,
             agentName: agent.name,
             effectiveChatModel,
+            modelProvider: effectiveChatModel.includes('-') ? 'gateway' : 'direct',
             isGlobal: agent.isGlobal,
             ownerUserId: agent.userId,
             currentUserId: session.user.id,
@@ -298,7 +255,11 @@ export async function POST(request: Request) {
         });
       }
     } else {
-      console.log('🤖 No agent selected, using default configuration');
+      console.log('🤖 No agent selected, using default configuration:', {
+        selectedChatModel,
+        effectiveChatModel,
+        modelProvider: effectiveChatModel.includes('-') ? 'gateway' : 'direct',
+      });
     }
 
     await saveMessages({
@@ -326,7 +287,11 @@ export async function POST(request: Request) {
         });
 
         console.log('📝 Final system prompt configuration:', {
+          chatId: id,
           effectiveChatModel,
+          modelProvider: effectiveChatModel.includes('-') ? 'gateway' : 'direct',
+          selectedChatModel,
+          modelOverridden: effectiveChatModel !== selectedChatModel,
           hasAgentPrompt: !!agentSystemPrompt,
           agentPromptPreview: agentSystemPrompt
             ? `${agentSystemPrompt.slice(0, 100)}...`
@@ -338,7 +303,7 @@ export async function POST(request: Request) {
         const result = streamText({
           model: myProvider.languageModel(effectiveChatModel),
           system: finalSystemPrompt,
-          messages: convertToModelMessages(uiMessages),
+          messages: convertToModelMessages(uiMessages as any),
           stopWhen: stepCountIs(5),
           experimental_activeTools: [
             'getWeather',
