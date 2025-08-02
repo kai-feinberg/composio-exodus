@@ -1,10 +1,5 @@
-import {
-  customProvider,
-  extractReasoningMiddleware,
-  wrapLanguageModel,
-} from 'ai';
-import { gateway } from '@ai-sdk/gateway';
-import { xai } from '@ai-sdk/xai';
+import { customProvider } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import {
   artifactModel,
   chatModel,
@@ -24,21 +19,9 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': gateway('xai/grok-2-vision-1212'),
-        'chat-model-reasoning': wrapLanguageModel({
-          model: gateway('xai/grok-3-mini-beta'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
-        }),
-        'title-model': gateway('xai/grok-2-1212'),
-        'artifact-model': gateway('xai/grok-2-1212'),
-        // Requested gateway models
-        'anthropic-claude-4-sonnet': gateway('anthropic/claude-4-sonnet'),
-        'openai-o3': gateway('openai/o3'),
-        'openai-gpt4-1-mini': gateway('openai/gpt-4.1-mini'),
-        'moonshotai-kimi-k2': gateway('moonshotai/kimi-k2'),
+        'chat-model': anthropic('claude-sonnet-4-20250514'),
+        'chat-model-reasoning': anthropic('claude-sonnet-4-20250514'),
+        'title-model': anthropic('claude-sonnet-4-20250514'),
+        'artifact-model': anthropic('claude-sonnet-4-20250514'),
       },
-      imageModels: {
-        'small-model': xai.imageModel('grok-2-image'),
-      },
-      fallbackProvider: xai, // Keep xAI as fallback if gateway fails
     });

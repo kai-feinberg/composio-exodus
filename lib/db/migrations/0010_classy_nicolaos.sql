@@ -1,1 +1,0 @@
-ALTER TABLE "Agent" ADD COLUMN "isGlobal" boolean DEFAULT false NOT NULL;

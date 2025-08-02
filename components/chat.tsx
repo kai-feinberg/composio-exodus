@@ -191,7 +191,6 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-dvh bg-background transition-colors duration-200">
         <ChatHeader
           chatId={id}
-          selectedModelId={initialChatModel}
           selectedVisibilityType={initialVisibilityType}
           isReadonly={isReadonly}
           session={session}

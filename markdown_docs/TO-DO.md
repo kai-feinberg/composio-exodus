@@ -1,5 +1,7 @@
 # Priorities
 
+User record should be created right after sign up, not after initial chat message.
+
 fix generations and message saving for everyone.
 
 - llm switching via llm gateway

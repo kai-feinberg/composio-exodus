@@ -14,11 +14,6 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
     maxMessagesPerDay: 1000, // Increased for development
     availableChatModelIds: [
       'chat-model',
-      'chat-model-reasoning',
-      'anthropic-claude-4-sonnet',
-      'openai-o3',
-      'openai-gpt4-1-mini',
-      'moonshotai-kimi-k2',
     ],
   },
 
