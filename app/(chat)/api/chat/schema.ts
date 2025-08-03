@@ -19,12 +19,11 @@ const stepStartPartSchema = z.object({
 });
 
 const toolPartSchema = z.object({
-  type: z.enum([
-    'tool-createDocument',
-    'tool-updateDocument',
-    'tool-requestSuggestions',
-    'tool-getWeather',
-  ]), // Known tool types
+  type: z
+    .string()
+    .refine((val) => val.startsWith('tool-'), {
+      message: 'Tool type must start with "tool-"',
+    }), // Accept any tool that starts with 'tool-' (built-in + Composio tools)
   toolCallId: z.string().optional(),
   state: z
     .enum(['partial-call', 'call', 'result', 'output-available'])
@@ -56,10 +55,12 @@ const aiSdkRequestSchema = z.object({
     }),
   ),
   // These fields from useChat body might not always be present
-  selectedChatModel: z.string().refine(
-    (val) => SUPPORTED_MODEL_IDS.includes(val as any),
-    { message: `Must be one of: ${SUPPORTED_MODEL_IDS.join(', ')}` }
-  ).optional(),
+  selectedChatModel: z
+    .string()
+    .refine((val) => SUPPORTED_MODEL_IDS.includes(val as any), {
+      message: `Must be one of: ${SUPPORTED_MODEL_IDS.join(', ')}`,
+    })
+    .optional(),
   selectedVisibilityType: z.enum(['public', 'private']).optional(),
   selectedAgentId: z.string().uuid().optional(),
   trigger: z.string().optional(), // AI SDK adds this

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Bot, } from 'lucide-react';
+import { Bot, Settings } from 'lucide-react';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -87,6 +87,20 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         {user && (
           <>
             <SidebarMenu>
+              {/* Connections - available to all users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link
+                    href="/connections"
+                    onClick={() => setOpenMobile(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="size-4" />
+                    <span>Connected Services</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
               {/* Browse agents - available to all users */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>

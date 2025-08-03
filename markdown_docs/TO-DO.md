@@ -1,8 +1,7 @@
 # Priorities
 
+show enabled tools in chat (poe like, does something need to be connected)
 User record should be created right after sign up, not after initial chat message.
-
-fix generations and message saving for everyone.
 
 - llm switching via llm gateway
   get observability up
@@ -10,7 +9,7 @@ fix generations and message saving for everyone.
 remove use agent feature button
 make account switcher
 
-upload and chat with text prompts
+upload and chat with text documents
 
 ## Features
 

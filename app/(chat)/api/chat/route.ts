@@ -24,6 +24,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { getComposioTools } from '@/lib/ai/tools/composio';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -36,10 +37,10 @@ import {
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
 import { SUPPORTED_MODEL_IDS } from '@/lib/ai/models';
-import { 
-  validateWithDetailedErrors, 
-  logValidationError, 
-  createContextualErrorMessage 
+import {
+  validateWithDetailedErrors,
+  logValidationError,
+  createContextualErrorMessage,
 } from '@/lib/validation';
 
 export const maxDuration = 60;
@@ -90,12 +91,12 @@ export async function POST(request: Request) {
 
   // Validate request with AI SDK v2 schema using improved validation
   const validationResult = validateWithDetailedErrors(
-    aiSdkRequestSchema, 
-    json, 
-    { 
-      prefix: "AI SDK v2 schema validation",
-      context: "Chat API request"
-    }
+    aiSdkRequestSchema,
+    json,
+    {
+      prefix: 'AI SDK v2 schema validation',
+      context: 'Chat API request',
+    },
   );
 
   if (!validationResult.success) {
@@ -109,7 +110,9 @@ export async function POST(request: Request) {
           hasId: !!json.id,
           idType: typeof json.id,
           hasMessages: !!json.messages,
-          messagesCount: Array.isArray(json.messages) ? json.messages.length : 0,
+          messagesCount: Array.isArray(json.messages)
+            ? json.messages.length
+            : 0,
           selectedChatModel: json.selectedChatModel,
           selectedAgentId: json.selectedAgentId,
         },
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
     // Create user-friendly error message with supported models
     const userMessage = createContextualErrorMessage(
       validationResult.error.issues,
-      [...SUPPORTED_MODEL_IDS]
+      [...SUPPORTED_MODEL_IDS],
     );
 
     return new ChatSDKError('bad_request:api', userMessage).toResponse();
@@ -128,9 +131,12 @@ export async function POST(request: Request) {
   console.log('✅ AI SDK v2 schema validation passed');
   const requestData = validationResult.data;
   const message = requestData.messages.at(-1); // Get the latest message
-  
+
   if (!message) {
-    return new ChatSDKError('bad_request:api', 'No message found in request').toResponse();
+    return new ChatSDKError(
+      'bad_request:api',
+      'No message found in request',
+    ).toResponse();
   }
 
   try {
@@ -148,7 +154,7 @@ export async function POST(request: Request) {
       selectedAgentId,
       hasMessage: !!message,
       messagePreview:
-        message?.parts?.[0]?.type === 'text'
+        message?.parts?.[0]?.type === 'text' && 'text' in message.parts[0]
           ? `${message.parts[0].text.slice(0, 50)}...`
           : 'non-text',
       rawRequestKeys: Object.keys(requestData),
@@ -227,11 +233,14 @@ export async function POST(request: Request) {
         if (!agent) {
           console.warn('❌ Agent not found in database:', selectedAgentId);
         } else if (agent.userId !== session.user.id && !agent.isGlobal) {
-          console.warn('❌ Agent belongs to different user and is not global:', {
-            agentUserId: agent.userId,
-            sessionUserId: session.user.id,
-            isGlobal: agent.isGlobal,
-          });
+          console.warn(
+            '❌ Agent belongs to different user and is not global:',
+            {
+              agentUserId: agent.userId,
+              sessionUserId: session.user.id,
+              isGlobal: agent.isGlobal,
+            },
+          );
         } else {
           agentSystemPrompt = agent.systemPrompt;
           effectiveChatModel = agent.modelId as string;
@@ -239,7 +248,9 @@ export async function POST(request: Request) {
             agentId: selectedAgentId,
             agentName: agent.name,
             effectiveChatModel,
-            modelProvider: effectiveChatModel.includes('-') ? 'gateway' : 'direct',
+            modelProvider: effectiveChatModel.includes('-')
+              ? 'gateway'
+              : 'direct',
             isGlobal: agent.isGlobal,
             ownerUserId: agent.userId,
             currentUserId: session.user.id,
@@ -279,7 +290,7 @@ export async function POST(request: Request) {
     await createStreamId({ streamId, chatId: id });
 
     const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
+      execute: async ({ writer: dataStream }) => {
         const finalSystemPrompt = systemPrompt({
           selectedChatModel: effectiveChatModel,
           requestHints,
@@ -289,7 +300,9 @@ export async function POST(request: Request) {
         console.log('📝 Final system prompt configuration:', {
           chatId: id,
           effectiveChatModel,
-          modelProvider: effectiveChatModel.includes('-') ? 'gateway' : 'direct',
+          modelProvider: effectiveChatModel.includes('-')
+            ? 'gateway'
+            : 'direct',
           selectedChatModel,
           modelOverridden: effectiveChatModel !== selectedChatModel,
           hasAgentPrompt: !!agentSystemPrompt,
@@ -300,27 +313,96 @@ export async function POST(request: Request) {
           finalPromptPreview: `${finalSystemPrompt.slice(0, 200)}...`,
         });
 
-        const result = streamText({
-          model: myProvider.languageModel(effectiveChatModel),
-          system: finalSystemPrompt,
-          messages: convertToModelMessages(uiMessages as any),
-          stopWhen: stepCountIs(5),
-          experimental_activeTools: [
+        // Fetch user's connected toolkits and Composio tools
+        let composioTools = {};
+        try {
+          console.log(`🔄 Loading Composio tools for user: ${session.user.id}`);
+          composioTools = await getComposioTools(session.user.id);
+          const toolNames = Object.keys(composioTools);
+          console.log(
+            `✅ Successfully loaded ${toolNames.length} Composio tools:`,
+            toolNames,
+          );
+        } catch (error) {
+          console.error('❌ Failed to load Composio tools:', error);
+          // Continue without Composio tools if this fails
+        }
+
+        // Wrap Composio tools with logging
+        const loggedComposioTools: Record<string, any> = {};
+        for (const [toolName, tool] of Object.entries(composioTools)) {
+          const typedTool = tool as any;
+
+          if (typeof typedTool.execute !== 'function') {
+            console.warn(
+              `⚠️ [${toolName}] Tool missing execute function, using original tool`,
+            );
+            loggedComposioTools[toolName] = typedTool;
+            continue;
+          }
+
+          loggedComposioTools[toolName] = {
+            ...typedTool,
+            execute: async (params: any) => {
+              console.log(
+                `🔧 [${toolName}] Tool called with params:`,
+                JSON.stringify(params, null, 2),
+              );
+              const startTime = Date.now();
+
+              try {
+                const result = await typedTool.execute(params);
+                const endTime = Date.now();
+                console.log(
+                  `✅ [${toolName}] Tool completed in ${endTime - startTime}ms`,
+                );
+                console.log(
+                  `📤 [${toolName}] Tool result:`,
+                  JSON.stringify(result, null, 2),
+                );
+                return result;
+              } catch (error) {
+                const endTime = Date.now();
+                console.error(
+                  `❌ [${toolName}] Tool failed in ${endTime - startTime}ms:`,
+                  error,
+                );
+                throw error;
+              }
+            },
+          };
+        }
+
+        // Combine existing tools with logged Composio tools
+        const allTools = {
+          getWeather,
+          createDocument: createDocument({ session, dataStream }),
+          updateDocument: updateDocument({ session, dataStream }),
+          requestSuggestions: requestSuggestions({
+            session,
+            dataStream,
+          }),
+          ...loggedComposioTools,
+        };
+
+        console.log(`🎯 [AI SDK] Final tool configuration:`, {
+          totalTools: Object.keys(allTools).length,
+          builtInTools: [
             'getWeather',
             'createDocument',
             'updateDocument',
             'requestSuggestions',
           ],
+          composioTools: Object.keys(loggedComposioTools),
+        });
+
+        const result = streamText({
+          model: myProvider.languageModel(effectiveChatModel),
+          system: finalSystemPrompt,
+          messages: convertToModelMessages(uiMessages as any),
+          stopWhen: stepCountIs(5),
           experimental_transform: smoothStream({ chunking: 'word' }),
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
+          tools: allTools,
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',
@@ -369,7 +451,7 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
     console.error('❌ Unexpected error in chat API:', error);
-    return new ChatSDKError('internal_server_error:chat').toResponse();
+    return new ChatSDKError('offline:chat').toResponse();
   }
 }
 
