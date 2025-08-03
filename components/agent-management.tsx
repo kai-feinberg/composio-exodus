@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Bot, Save, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import {
 import type { Agent } from '@/lib/db/schema';
 import { toast } from 'sonner';
 import { chatModels } from '@/lib/ai/models';
-import { FileDropzone } from './ui/file-dropzone';
+import { FileDropzone } from '@/components/ui/file-dropzone';
 import {
   extractTextFromDocx,
   type DocxProcessingResult,

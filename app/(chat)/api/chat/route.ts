@@ -319,10 +319,10 @@ export async function POST(request: Request) {
           console.log(`🔄 Loading Composio tools for user: ${session.user.id}`);
           composioTools = await getComposioTools(session.user.id);
           const toolNames = Object.keys(composioTools);
-          console.log(
-            `✅ Successfully loaded ${toolNames.length} Composio tools:`,
-            toolNames,
-          );
+          // console.log(
+          //   `✅ Successfully loaded ${toolNames.length} Composio tools:`,
+          //   toolNames,
+          // );
         } catch (error) {
           console.error('❌ Failed to load Composio tools:', error);
           // Continue without Composio tools if this fails
@@ -356,10 +356,10 @@ export async function POST(request: Request) {
                 console.log(
                   `✅ [${toolName}] Tool completed in ${endTime - startTime}ms`,
                 );
-                console.log(
-                  `📤 [${toolName}] Tool result:`,
-                  JSON.stringify(result, null, 2),
-                );
+                // console.log(
+                //   `📤 [${toolName}] Tool result:`,
+                //   JSON.stringify(result, null, 2),
+                // );
                 return result;
               } catch (error) {
                 const endTime = Date.now();

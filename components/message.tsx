@@ -19,6 +19,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { ComposioTool } from './composio-tool';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -306,6 +307,32 @@ const PurePreviewMessage = ({
                     </div>
                   );
                 }
+              }
+
+              // Handle Composio tools (tools that aren't built-in)
+              if (
+                type.startsWith('tool-') &&
+                ![
+                  'tool-getWeather',
+                  'tool-createDocument',
+                  'tool-updateDocument',
+                  'tool-requestSuggestions',
+                ].includes(type)
+              ) {
+                const { toolCallId, state, input, output } = part as any;
+                const toolName = type.replace('tool-', ''); // Remove 'tool-' prefix
+
+                return (
+                  <div key={toolCallId} className="my-4">
+                    <ComposioTool
+                      toolName={toolName}
+                      toolCallId={toolCallId}
+                      state={state}
+                      input={input}
+                      output={output}
+                    />
+                  </div>
+                );
               }
             })}
 
