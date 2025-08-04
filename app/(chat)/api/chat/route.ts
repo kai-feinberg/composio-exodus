@@ -6,7 +6,7 @@ import {
   stepCountIs,
   streamText,
 } from 'ai';
-import { auth, type UserType, ensureUserExists } from '@/lib/auth';
+import { auth, type UserType } from '@/lib/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
@@ -168,9 +168,7 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    // Ensure user exists in database before proceeding
-    await ensureUserExists(session.user.id, session.user.organizationId);
-
+    // User existence is now ensured by middleware
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,

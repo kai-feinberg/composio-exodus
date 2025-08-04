@@ -2,7 +2,7 @@
 
 import type { User } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { useAuth , OrganizationSwitcher, Protect } from '@clerk/nextjs';
+import { useAuth, OrganizationSwitcher, Protect } from '@clerk/nextjs';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -16,11 +16,12 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Bot, Settings } from 'lucide-react';
+import { Bot, Settings, Shield } from 'lucide-react';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -62,7 +63,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             </Tooltip>
           </div>
         </SidebarMenu>
-        
+
         {/* Organization Switcher */}
         {user && (
           <div className="px-2 py-1">
@@ -86,6 +87,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       <SidebarFooter>
         {user && (
           <>
+            {/* Regular user links */}
             <SidebarMenu>
               {/* Connections - available to all users */}
               <SidebarMenuItem>
@@ -100,7 +102,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               {/* Browse agents - available to all users */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
@@ -114,9 +116,18 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
-              {/* Admin-only agent management */}
-              <Protect fallback={null}>
+            </SidebarMenu>
+
+            {/* Admin section - only visible to org:admin users */}
+            <Protect role="org:admin" fallback={null}>
+              <SidebarSeparator />
+              <div className="px-2 py-1">
+                <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Shield className="size-3" />
+                  <span>Admin</span>
+                </div>
+              </div>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link
@@ -129,8 +140,9 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </Protect>
-            </SidebarMenu>
+              </SidebarMenu>
+            </Protect>
+
             <SidebarUserNav user={user} />
           </>
         )}

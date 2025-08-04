@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bot, } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -13,7 +12,6 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/toast';
-import { chatModels } from '@/lib/ai/models';
 
 interface PublicAgent {
   id: string;
@@ -106,8 +104,9 @@ export default function BrowseAgentsPage() {
           <Bot className="mx-auto size-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No agents available</h3>
           <p className="text-muted-foreground mb-4">
-            Your organization administrators haven&apos;t created any agents yet.
-            Contact an admin to create some specialized agents for your team!
+            Your organization administrators haven&apos;t created any agents
+            yet. Contact an admin to create some specialized agents for your
+            team!
           </p>
         </div>
       ) : (
@@ -127,15 +126,6 @@ export default function BrowseAgentsPage() {
                 <div className="space-y-2">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">
-                      Model
-                    </p>
-                    <p className="text-sm">
-                      {chatModels.find((m) => m.id === agent.modelId)?.name ||
-                        agent.modelId}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       Created
                     </p>
                     <p className="text-sm">
@@ -144,15 +134,6 @@ export default function BrowseAgentsPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button
-                  onClick={() => handleUseAgent(agent)}
-                  className="flex items-center gap-1 flex-1"
-                >
-                  <Eye className="size-3" />
-                  Use Agent
-                </Button>
-              </CardFooter>
             </Card>
           ))}
         </div>

@@ -1,12 +1,18 @@
 # Priorities
 
-show enabled tools in chat (poe like, does something need to be connected)
+test mailchimp composio integration
+
+test running tools on behalf of users
+test scheduled workflows
+create agents with specific tools enabled
+
+show enabled tools in chat (and what needs to be enabled)(poe like, does something need to be connected)
 User record should be created right after sign up, not after initial chat message.
 
 - llm switching via llm gateway
+- switch to llm gateway rather than anthropic provider to get better rate limits?
   get observability up
 
-remove use agent feature button
 make account switcher
 
 upload and chat with text documents
