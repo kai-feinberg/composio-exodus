@@ -18,13 +18,14 @@ import {
   saveMessages,
   getAgentById,
 } from '@/lib/db/queries';
-import { convertToUIMessages, generateUUID } from '@/lib/utils';
+import { convertToUIMessages, generateUUID, getMessageStats } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { getComposioTools } from '@/lib/ai/tools/composio';
+import { sanitizeToolResult } from '@/lib/ai/tools/result-sanitizer';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -138,6 +139,16 @@ export async function POST(request: Request) {
       'No message found in request',
     ).toResponse();
   }
+
+  // Log user prompt and token/character counts
+  const messageStats = getMessageStats(message);
+  console.log('📊 User Input Stats:', {
+    messageId: message.id,
+    characterCount: messageStats.characterCount,
+    estimatedTokenCount: messageStats.estimatedTokenCount,
+    textPreview: messageStats.text.slice(0, 100) + (messageStats.text.length > 100 ? '...' : ''),
+    timestamp: new Date().toISOString(),
+  });
 
   try {
     const {
@@ -349,16 +360,26 @@ export async function POST(request: Request) {
               const startTime = Date.now();
 
               try {
-                const result = await typedTool.execute(params);
+                const rawResult = await typedTool.execute(params);
                 const endTime = Date.now();
+                
+                // Sanitize the result to prevent token limit issues
+                const sanitizedResult = sanitizeToolResult(rawResult, toolName);
+                
                 console.log(
                   `✅ [${toolName}] Tool completed in ${endTime - startTime}ms`,
                 );
-                // console.log(
-                //   `📤 [${toolName}] Tool result:`,
-                //   JSON.stringify(result, null, 2),
-                // );
-                return result;
+                
+                // Log result size information for monitoring
+                const rawSize = JSON.stringify(rawResult).length;
+                const sanitizedSize = JSON.stringify(sanitizedResult).length;
+                if (rawSize > 5000) {
+                  console.log(
+                    `🧹 [${toolName}] Result sanitized: ${rawSize} → ${sanitizedSize} chars (${((rawSize - sanitizedSize) / rawSize * 100).toFixed(1)}% reduction)`,
+                  );
+                }
+                
+                return sanitizedResult;
               } catch (error) {
                 const endTime = Date.now();
                 console.error(
@@ -374,12 +395,12 @@ export async function POST(request: Request) {
         // Combine existing tools with logged Composio tools
         const allTools = {
           getWeather,
-          createDocument: createDocument({ session, dataStream }),
-          updateDocument: updateDocument({ session, dataStream }),
-          requestSuggestions: requestSuggestions({
-            session,
-            dataStream,
-          }),
+          // createDocument: createDocument({ session, dataStream }),
+          // updateDocument: updateDocument({ session, dataStream }),
+          // requestSuggestions: requestSuggestions({
+          //   session,
+          //   dataStream,
+          // }),
           ...loggedComposioTools,
         };
 

@@ -24,43 +24,46 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'Analyze this codebase',
+      label: 'and suggest improvements',
+      action:
+        'Analyze my codebase architecture and suggest performance improvements',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'Build a React component',
+      label: 'with TypeScript and accessibility',
+      action:
+        'Build a React component with TypeScript that includes proper accessibility features',
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
+      title: 'Debug this error',
+      label: 'and explain the root cause',
+      action: 'Help me debug this error and explain the root cause with a fix',
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title: 'Create API documentation',
+      label: 'from my Express routes',
+      action:
+        'Generate comprehensive API documentation from my Express.js routes',
     },
   ];
 
   return (
     <div
       data-testid="suggested-actions"
-      className="grid sm:grid-cols-2 gap-2 w-full"
+      className="grid sm:grid-cols-2 gap-3 w-full max-w-4xl mx-auto"
     >
       {suggestedActions.map((suggestedAction, index) => (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ delay: 0.05 * index }}
+          transition={{ delay: 0.1 * index, duration: 0.4 }}
           key={`suggested-action-${suggestedAction.title}-${index}`}
           className={index > 1 ? 'hidden sm:block' : 'block'}
         >
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
 
@@ -78,12 +81,16 @@ function PureSuggestedActions({
                 },
               );
             }}
-            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+            className="text-left rounded-lg p-4 text-sm flex-1 gap-2 sm:flex-col w-full h-auto justify-start items-start hover:bg-muted hover:border-muted-foreground/50 transition-all duration-200 group hover:shadow-sm"
           >
-            <span className="font-medium">{suggestedAction.title}</span>
-            <span className="text-muted-foreground">
-              {suggestedAction.label}
-            </span>
+            <div className="text-left space-y-1">
+              <span className="font-semibold text-foreground group-hover:text-foreground">
+                {suggestedAction.title}
+              </span>
+              <span className="text-muted-foreground text-xs leading-relaxed block">
+                {suggestedAction.label}
+              </span>
+            </div>
           </Button>
         </motion.div>
       ))}

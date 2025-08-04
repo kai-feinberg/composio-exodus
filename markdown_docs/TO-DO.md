@@ -2,6 +2,8 @@
 
 test mailchimp composio integration
 
+disable artifacts for now
+
 test running tools on behalf of users
 test scheduled workflows (Cron jobs): https://vercel.com/docs/cron-jobs/quickstart
 

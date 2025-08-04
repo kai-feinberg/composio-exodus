@@ -20,6 +20,28 @@
     .text-balance {
         text-wrap: balance;
     }
+    
+    /* Multi-line text truncation */
+    .line-clamp-1 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+    }
+    
+    .line-clamp-2 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+    
+    .line-clamp-3 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+    }
 }
 
 @layer base {
@@ -49,15 +71,15 @@
         --chart-4: oklch(0.7000 0.18 340);
         --chart-5: oklch(0.6500 0.15 180);
         --radius: 0.5rem;
-        --sidebar-background: 220 100% 12%;
-        --sidebar-foreground: 0 0% 100%;
-        --sidebar-primary: 0 0% 100%;
-        --sidebar-primary-foreground: 220 100% 12%;
-        --sidebar-accent: 220 100% 8%;
-        --sidebar-accent-foreground: 0 0% 100%;
-        --sidebar-border: 220 100% 6%;
-        --sidebar-ring: 280 100% 60%;
-        --sidebar: 220 100% 12%;
+        --sidebar-background: 215 14% 97%;
+        --sidebar-foreground: 215 14% 17%;
+        --sidebar-primary: 215 25% 27%;
+        --sidebar-primary-foreground: 215 14% 97%;
+        --sidebar-accent: 215 14% 91%;
+        --sidebar-accent-foreground: 215 25% 17%;
+        --sidebar-border: 215 14% 86%;
+        --sidebar-ring: 215 25% 57%;
+        --sidebar: 215 14% 97%;
         --font-sans: Poppins, sans-serif;
         --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
         --font-mono: Roboto Mono, monospace;
@@ -104,16 +126,16 @@
         --chart-3: oklch(0.8148 0.0819 225.7537);
         --chart-4: oklch(0.9680 0.2110 109.7692);
         --chart-5: oklch(0.8652 0.1768 90.3816);
-        --sidebar-background: 240 5.9% 10%;
-        --sidebar-foreground: 240 4.8% 95.9%;
-        --sidebar-primary: 224.3 76.3% 48%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 240 3.7% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 240 3.7% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
+        --sidebar-background: 215 20% 11%;
+        --sidebar-foreground: 215 14% 89%;
+        --sidebar-primary: 215 25% 73%;
+        --sidebar-primary-foreground: 215 20% 11%;
+        --sidebar-accent: 215 15% 18%;
+        --sidebar-accent-foreground: 215 14% 89%;
+        --sidebar-border: 215 15% 21%;
+        --sidebar-ring: 215 25% 67%;
         --radius: 0.5rem;
-        --sidebar: oklch(0.2303 0.0125 264.2926);
+        --sidebar: 215 20% 11%;
         --font-sans: Poppins, sans-serif;
         --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
         --font-mono: Roboto Mono, monospace;
@@ -217,4 +239,30 @@
 
 .suggestion-highlight {
     @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400 dark:text-blue-50 dark:bg-blue-500;
+}
+
+/* Enhanced sidebar accessibility and visual polish */
+.sidebar-item-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:outline-none;
+}
+
+.sidebar-smooth-transition {
+    @apply transition-all duration-200 ease-in-out;
+}
+
+/* Improved scrollbar styling for sidebar */
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-sidebar-border/40 rounded-full hover:bg-sidebar-border/60;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-sidebar-border/70;
 }

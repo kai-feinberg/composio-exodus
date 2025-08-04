@@ -9,7 +9,6 @@ import {
 import type { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/providers';
 
-
 export async function generateTitleFromUserMessage({
   message,
 }: {
@@ -21,6 +20,7 @@ export async function generateTitleFromUserMessage({
     - you will generate a short title based on the first message a user begins a conversation with
     - ensure it is not more than 80 characters long
     - the title should be a summary of the user's message
+    - assume the agent can access the tools required to complete the task
     - do not use quotes or colons`,
     prompt: JSON.stringify(message),
   });

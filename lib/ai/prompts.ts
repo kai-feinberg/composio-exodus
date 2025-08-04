@@ -64,7 +64,10 @@ export const systemPrompt = ({
 
   // Include artifacts prompt for both regular and reasoning models
   // The reasoning model can still use artifacts while leveraging its reasoning capabilities
-  return `${basePrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+
+  // removing artifacts prompt for now
+  // return `${basePrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${basePrompt}\n\n${requestPrompt}`;
 };
 
 export const codePrompt = `

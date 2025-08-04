@@ -114,3 +114,34 @@ export function getTextFromMessage(message: ChatMessage): string {
     .map((part) => part.text)
     .join('');
 }
+
+/**
+ * Estimates token count using a simple approximation: 1 token ≈ 4 characters
+ * This is a rough estimate commonly used for English text
+ */
+export function estimateTokenCount(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+/**
+ * Extracts text from UI message parts and calculates character and token counts
+ */
+export function getMessageStats(message: any): {
+  text: string;
+  characterCount: number;
+  estimatedTokenCount: number;
+} {
+  const text = message.parts
+    .filter((part: any) => part.type === 'text')
+    .map((part: any) => part.text)
+    .join('');
+  
+  const characterCount = text.length;
+  const estimatedTokenCount = estimateTokenCount(text);
+  
+  return {
+    text,
+    characterCount,
+    estimatedTokenCount,
+  };
+}

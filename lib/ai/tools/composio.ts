@@ -1,4 +1,5 @@
 import composio, { getConnectedToolkits } from '@/lib/services/composio';
+import { sanitizeToolResult } from './result-sanitizer';
 
 /**
  * Validates and fixes tool schema to ensure AI SDK v5 compatibility
