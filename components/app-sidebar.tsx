@@ -66,11 +66,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           </div>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="px-3 py-4 sidebar-scrollbar">
+      <SidebarContent className="flex flex-col h-full">
         {user && (
           <>
-            {/* Regular user links */}
-            <div className="space-y-1 mb-4">
+            {/* Fixed navigation links at the top */}
+            <div className="px-3 py-4 space-y-1 flex-shrink-0">
               <SidebarMenu>
                 {/* Connections - available to all users */}
                 <SidebarMenuItem>
@@ -126,7 +126,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             </div>
           </>
         )}
-        <SidebarHistory user={user} />
+        
+        {/* Scrollable message history section */}
+        <div className="flex-1 overflow-y-auto sidebar-scrollbar px-3">
+          <SidebarHistory user={user} />
+        </div>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border/50 bg-sidebar/50 backdrop-blur supports-[backdrop-filter]:bg-sidebar/75 mt-auto">
         {user && (
