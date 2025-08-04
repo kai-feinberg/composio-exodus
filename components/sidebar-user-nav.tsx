@@ -2,7 +2,12 @@
 
 import { ChevronUp, Crown } from 'lucide-react';
 import Image from 'next/image';
-import { useClerk, useUser, useAuth } from '@clerk/nextjs';
+import {
+  useClerk,
+  useUser,
+  useAuth,
+  OrganizationSwitcher,
+} from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
 
 import {
@@ -40,7 +45,7 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             {!isLoaded ? (
-              <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10 justify-between">
+              <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground h-10 justify-between">
                 <div className="flex flex-row gap-2">
                   <div className="size-6 bg-zinc-500/30 rounded-full animate-pulse" />
                   <span className="bg-zinc-500/30 text-transparent rounded-md animate-pulse">
@@ -54,8 +59,10 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
             ) : (
               <SidebarMenuButton
                 data-testid="user-nav-button"
-                className={`data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10 ${
-                  isAdmin ? 'ring-2 ring-yellow-500/50 border-yellow-500/30' : ''
+                className={`data-[state=open]:bg-sidebar-accent bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground h-10 ${
+                  isAdmin
+                    ? 'ring-2 ring-yellow-500/50 border-yellow-500/30'
+                    : ''
                 }`}
               >
                 <div className="relative">
@@ -90,6 +97,22 @@ export function SidebarUserNav({ user: initialUser }: { user: UserProps }) {
             side="top"
             className="w-[--radix-popper-anchor-width]"
           >
+            {/* Organization Switcher */}
+            <div className="px-2 py-1">
+              <OrganizationSwitcher
+                appearance={{
+                  elements: {
+                    organizationSwitcherTrigger:
+                      'w-full justify-start text-sm border-none shadow-none bg-transparent hover:bg-accent',
+                    organizationSwitcherTriggerIcon: 'size-4',
+                  },
+                }}
+                hidePersonal={false}
+                createOrganizationMode="modal"
+                organizationProfileMode="modal"
+              />
+            </div>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               data-testid="user-nav-item-theme"
               className="cursor-pointer"

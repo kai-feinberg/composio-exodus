@@ -29,7 +29,7 @@ import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { AgentSelector } from './agent-selector';
-import { AgentManagement } from './agent-management';
+
 import { generateUUID } from '@/lib/utils';
 
 function PureMultimodalInput({
@@ -116,7 +116,6 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
-  const [isAgentManagementOpen, setIsAgentManagementOpen] = useState(false);
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -335,7 +334,6 @@ function PureMultimodalInput({
         <AgentSelector
           selectedAgentId={selectedAgentId}
           onAgentChange={onAgentChange}
-          onManageAgents={() => setIsAgentManagementOpen(true)}
           disabled={status !== 'ready'}
         />
       </div>
@@ -351,13 +349,6 @@ function PureMultimodalInput({
           />
         )}
       </div>
-
-      {/* Agent Management Dialog */}
-      <AgentManagement
-        isOpen={isAgentManagementOpen}
-        onClose={() => setIsAgentManagementOpen(false)}
-        editingAgent={null}
-      />
     </div>
   );
 }

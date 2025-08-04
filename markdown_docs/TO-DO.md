@@ -3,8 +3,14 @@
 test mailchimp composio integration
 
 test running tools on behalf of users
-test scheduled workflows
-create agents with specific tools enabled (not just tool kits but basic toosl)
+test scheduled workflows (Cron jobs): https://vercel.com/docs/cron-jobs/quickstart
+
+- literally just define an api route and adjust config
+- how to protect api routes though?
+
+observability: https://langfuse.com/integrations/frameworks/vercel-ai-sdk
+
+create agents with specific tools enabled (not just toolkits but specific toosl)
 
 create list of tools from tool kits and args/parameters
 

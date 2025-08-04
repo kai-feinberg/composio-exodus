@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { Check, ChevronDown, Bot, Settings } from 'lucide-react';
+import { Check, ChevronDown, Bot } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
 import { Button } from './ui/button';
 import {
@@ -20,22 +20,20 @@ import { toast } from 'sonner';
 interface AgentSelectorProps {
   selectedAgentId?: string;
   onAgentChange: (agentId: string) => void;
-  onManageAgents?: () => void;
   disabled?: boolean;
 }
 
 export function AgentSelector({
   selectedAgentId,
   onAgentChange,
-  onManageAgents,
   disabled = false,
 }: AgentSelectorProps) {
   const { has } = useAuth();
   const isAdmin = has?.({ role: 'org:admin' }) ?? false;
-  
+
   // Use admin endpoint for admins, browse endpoint for regular users
   const apiEndpoint = isAdmin ? '/api/agents' : '/api/agents/browse';
-  
+
   const { data, error, mutate } = useSWR<{ agents: Agent[] }>(
     apiEndpoint,
     fetcher,
@@ -168,19 +166,6 @@ export function AgentSelector({
             </div>
           </DropdownMenuItem>
         ))}
-
-        {onManageAgents && isAdmin && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={onManageAgents}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <Settings size={14} />
-              Manage Agents
-            </DropdownMenuItem>
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

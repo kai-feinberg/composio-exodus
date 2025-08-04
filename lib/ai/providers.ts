@@ -1,5 +1,6 @@
 import { customProvider } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
+import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
   chatModel,
@@ -19,10 +20,14 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': anthropic('claude-sonnet-4-20250514'),
-        'chat-model-reasoning': anthropic('claude-sonnet-4-20250514'),
-        'title-model': anthropic('claude-sonnet-4-20250514'),
-        'artifact-model': anthropic('claude-sonnet-4-20250514'),
+        // 'chat-model': anthropic('claude-sonnet-4-20250514'),
+        // 'chat-model-reasoning': anthropic('claude-sonnet-4-20250514'),
+        // 'title-model': anthropic('claude-sonnet-4-20250514'),
+        // 'artifact-model': anthropic('claude-sonnet-4-20250514'),
+        'chat-model': gateway('claude-sonnet-4-20250514'),
+        'chat-model-reasoning': gateway('claude-sonnet-4-20250514'),
+        'title-model': gateway('claude-sonnet-4-20250514'),
+        'artifact-model': gateway('claude-sonnet-4-20250514'),
         // 'chat-model': anthropic('claude-3-haiku-20240307'),
         // 'chat-model-reasoning': anthropic('claude-3-haiku-20240307'),
         // 'title-model': anthropic('claude-3-haiku-20240307'),

@@ -207,7 +207,13 @@ export function Chat({
           isArtifactVisible={isArtifactVisible}
         />
 
-        <form className="flex mx-auto px-4 bg-background/80 backdrop-blur-sm border-t border-border/50 pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+        <form
+          className={`flex mx-auto px-4 bg-background/80 backdrop-blur-sm pb-4 md:pb-6 gap-2 w-full md:max-w-3xl ${
+            messages.length === 0 && attachments.length === 0
+              ? 'border-t border-border/50'
+              : ''
+          }`}
+        >
           {!isReadonly && (
             <MultimodalInput
               chatId={id}

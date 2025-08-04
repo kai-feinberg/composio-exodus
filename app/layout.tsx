@@ -8,7 +8,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Horde AI Chat',
+  title: 'Exodus AI Chat',
   description: 'Modern AI chat interface powered by Next.js',
 };
 

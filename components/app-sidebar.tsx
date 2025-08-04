@@ -2,7 +2,7 @@
 
 import type { User } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { useAuth, OrganizationSwitcher, Protect } from '@clerk/nextjs';
+import { useAuth, Protect } from '@clerk/nextjs';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -40,8 +40,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               }}
               className="flex flex-row gap-3 items-center"
             >
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer text-primary">
-                Horde AI
+              <span className="text-lg font-semibold px-2 hover:bg-sidebar-accent rounded-md cursor-pointer text-sidebar-foreground">
+                Exodus AI
               </span>
             </Link>
             <Tooltip>
@@ -63,23 +63,6 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             </Tooltip>
           </div>
         </SidebarMenu>
-
-        {/* Organization Switcher */}
-        {user && (
-          <div className="px-2 py-1">
-            <OrganizationSwitcher
-              appearance={{
-                elements: {
-                  organizationSwitcherTrigger: 'w-full justify-start text-sm',
-                  organizationSwitcherTriggerIcon: 'size-4',
-                },
-              }}
-              hidePersonal={false}
-              createOrganizationMode="modal"
-              organizationProfileMode="modal"
-            />
-          </div>
-        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarHistory user={user} />
