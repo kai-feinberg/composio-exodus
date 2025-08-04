@@ -24,27 +24,28 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'Analyze this codebase',
-      label: 'and suggest improvements',
+      title: 'Create email campaign',
+      label: 'using Gmail tools for marketing',
       action:
-        'Analyze my codebase architecture and suggest performance improvements',
+        'Help me create an email marketing campaign using Gmail tools with audience segmentation and tracking',
     },
     {
-      title: 'Build a React component',
-      label: 'with TypeScript and accessibility',
+      title: 'Design email template',
+      label: 'with responsive HTML layout',
       action:
-        'Build a React component with TypeScript that includes proper accessibility features',
+        'Design a professional email template with responsive HTML layout for marketing campaigns',
     },
     {
-      title: 'Debug this error',
-      label: 'and explain the root cause',
-      action: 'Help me debug this error and explain the root cause with a fix',
+      title: 'Set up email automation',
+      label: 'for lead nurturing sequence',
+      action:
+        'Set up an automated email sequence for lead nurturing using Gmail and marketing tools',
     },
     {
-      title: 'Create API documentation',
-      label: 'from my Express routes',
+      title: 'Analyze campaign performance',
+      label: 'with metrics and insights',
       action:
-        'Generate comprehensive API documentation from my Express.js routes',
+        'Analyze email campaign performance metrics and provide insights for optimization',
     },
   ];
 

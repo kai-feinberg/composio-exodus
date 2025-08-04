@@ -3,7 +3,7 @@ import { SUPPORTED_MODEL_IDS } from '@/lib/ai/models';
 
 const textPartSchema = z.object({
   type: z.enum(['text']),
-  text: z.string().min(1).max(2000),
+  text: z.string().min(1).max(50000), // Increased from 2000 to handle large tool results and content
   state: z.string().optional(), // AI SDK v5 can add state
 });
 

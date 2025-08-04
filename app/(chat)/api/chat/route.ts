@@ -18,7 +18,11 @@ import {
   saveMessages,
   getAgentById,
 } from '@/lib/db/queries';
-import { convertToUIMessages, generateUUID, getMessageStats } from '@/lib/utils';
+import {
+  convertToUIMessages,
+  generateUUID,
+  getMessageStats,
+} from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
@@ -146,7 +150,9 @@ export async function POST(request: Request) {
     messageId: message.id,
     characterCount: messageStats.characterCount,
     estimatedTokenCount: messageStats.estimatedTokenCount,
-    textPreview: messageStats.text.slice(0, 100) + (messageStats.text.length > 100 ? '...' : ''),
+    textPreview:
+      messageStats.text.slice(0, 100) +
+      (messageStats.text.length > 100 ? '...' : ''),
     timestamp: new Date().toISOString(),
   });
 
@@ -362,23 +368,23 @@ export async function POST(request: Request) {
               try {
                 const rawResult = await typedTool.execute(params);
                 const endTime = Date.now();
-                
+
                 // Sanitize the result to prevent token limit issues
                 const sanitizedResult = sanitizeToolResult(rawResult, toolName);
-                
+
                 console.log(
                   `✅ [${toolName}] Tool completed in ${endTime - startTime}ms`,
                 );
-                
+
                 // Log result size information for monitoring
                 const rawSize = JSON.stringify(rawResult).length;
                 const sanitizedSize = JSON.stringify(sanitizedResult).length;
                 if (rawSize > 5000) {
                   console.log(
-                    `🧹 [${toolName}] Result sanitized: ${rawSize} → ${sanitizedSize} chars (${((rawSize - sanitizedSize) / rawSize * 100).toFixed(1)}% reduction)`,
+                    `🧹 [${toolName}] Result sanitized: ${rawSize} → ${sanitizedSize} chars (${(((rawSize - sanitizedSize) / rawSize) * 100).toFixed(1)}% reduction)`,
                   );
                 }
-                
+
                 return sanitizedResult;
               } catch (error) {
                 const endTime = Date.now();
@@ -406,12 +412,6 @@ export async function POST(request: Request) {
 
         console.log(`🎯 [AI SDK] Final tool configuration:`, {
           totalTools: Object.keys(allTools).length,
-          builtInTools: [
-            'getWeather',
-            'createDocument',
-            'updateDocument',
-            'requestSuggestions',
-          ],
           composioTools: Object.keys(loggedComposioTools),
         });
 

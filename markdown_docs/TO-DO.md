@@ -2,6 +2,10 @@
 
 test mailchimp composio integration
 
+enable vs disable different tools in tool kits
+
+- ie twitter bookmarks
+
 disable artifacts for now
 
 test running tools on behalf of users
