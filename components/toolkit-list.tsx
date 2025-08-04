@@ -55,7 +55,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
       const authConfigMap: Record<string, string> = {
         gmail: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GMAIL || '',
         twitter: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_TWITTER || '',
-        // Add more mappings as needed
+        mailchimp: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_MAILCHIMP || '',
       };
 
       const authConfigId = authConfigMap[toolkit.slug];
@@ -271,10 +271,9 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
               Once connected, you can ask the AI to perform actions like:
             </p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><strong>Gmail:</strong> Send emails, read your inbox, manage calendar events</li>
-              <li><strong>GitHub:</strong> Create issues, manage repositories, review pull requests</li>
-              <li><strong>Notion:</strong> Create pages, update databases, manage content</li>
-              <li><strong>Slack:</strong> Send messages, manage channels, get team updates</li>
+              <li><strong>Gmail:</strong> Send emails, read your inbox, organize messages</li>
+              <li><strong>Twitter:</strong> Post tweets, manage your Twitter presence, engage with followers</li>
+              <li><strong>Mailchimp:</strong> Manage email campaigns, subscriber lists, and marketing automation</li>
             </ul>
             <p className="mt-4 text-sm">
               Your data is secure - we only access what you explicitly authorize through OAuth.

@@ -27,11 +27,8 @@ type ConnectedAccount = {
 // Hardcoded list of supported toolkits
 const SUPPORTED_TOOLKITS = [
   "GMAIL",
-  "GOOGLECALENDAR",
-  "GITHUB",
-  "NOTION",
-  "SLACK",
-  "LINEAR",
+  "TWITTER",
+  "MAILCHIMP",
 ];
 
 export async function GET() {

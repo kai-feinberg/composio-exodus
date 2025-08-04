@@ -40,41 +40,32 @@ export default async function ConnectionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-start space-x-3">
               <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
                 <div className="size-2 bg-blue-500 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Email & Calendar</h4>
-                <p className="text-xs text-muted-foreground">Send emails, manage events</p>
+                <h4 className="font-medium text-sm">Email Management</h4>
+                <p className="text-xs text-muted-foreground">Send emails, read inbox, organize messages</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded">
-                <div className="size-2 bg-purple-500 rounded-full" />
+              <div className="p-1 bg-sky-100 dark:bg-sky-900/30 rounded">
+                <div className="size-2 bg-sky-500 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Code & Projects</h4>
-                <p className="text-xs text-muted-foreground">Manage GitHub repos, issues</p>
+                <h4 className="font-medium text-sm">Social Media</h4>
+                <p className="text-xs text-muted-foreground">Post tweets, manage Twitter presence</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded">
-                <div className="size-2 bg-green-500 rounded-full" />
+              <div className="p-1 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                <div className="size-2 bg-yellow-600 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Team Communication</h4>
-                <p className="text-xs text-muted-foreground">Slack messages, channels</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="p-1 bg-orange-100 dark:bg-orange-900/30 rounded">
-                <div className="size-2 bg-orange-500 rounded-full" />
-              </div>
-              <div>
-                <h4 className="font-medium text-sm">Knowledge Management</h4>
-                <p className="text-xs text-muted-foreground">Notion pages, databases</p>
+                <h4 className="font-medium text-sm">Email Marketing</h4>
+                <p className="text-xs text-muted-foreground">Manage campaigns, lists, subscribers</p>
               </div>
             </div>
           </div>
