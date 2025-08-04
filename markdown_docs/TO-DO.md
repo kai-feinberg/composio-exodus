@@ -4,10 +4,11 @@ test mailchimp composio integration
 
 test running tools on behalf of users
 test scheduled workflows
-create agents with specific tools enabled
+create agents with specific tools enabled (not just tool kits but basic toosl)
+
+create list of tools from tool kits and args/parameters
 
 show enabled tools in chat (and what needs to be enabled)(poe like, does something need to be connected)
-User record should be created right after sign up, not after initial chat message.
 
 - llm switching via llm gateway
 - switch to llm gateway rather than anthropic provider to get better rate limits?
@@ -16,6 +17,8 @@ User record should be created right after sign up, not after initial chat messag
 make account switcher
 
 upload and chat with text documents
+
+create n8n esc editor in react flow to build out the workflows?
 
 ## Features
 

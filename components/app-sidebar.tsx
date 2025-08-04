@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Bot, Settings, Shield } from 'lucide-react';
+import { Bot, Settings, Shield, TestTube } from 'lucide-react';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -113,6 +113,20 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   >
                     <Bot className="size-4" />
                     <span>Browse Agents</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Manual Test - available to all users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link
+                    href="/manual-test"
+                    onClick={() => setOpenMobile(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <TestTube className="size-4" />
+                    <span>Manual Test</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
