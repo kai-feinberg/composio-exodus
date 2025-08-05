@@ -29,6 +29,7 @@ import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { AgentSelector } from './agent-selector';
+import { AgentMentionInput } from './agent-mention-input';
 
 import { generateUUID } from '@/lib/utils';
 
@@ -66,6 +67,7 @@ function PureMultimodalInput({
   onAgentChange: (agentId: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionInputRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
 
   useEffect(() => {
@@ -75,16 +77,19 @@ function PureMultimodalInput({
   }, []);
 
   const adjustHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+    // Try mention input first, then fall back to textarea
+    const currentRef = mentionInputRef.current || textareaRef.current;
+    if (currentRef) {
+      currentRef.style.height = 'auto';
+      currentRef.style.height = `${currentRef.scrollHeight + 2}px`;
     }
   };
 
   const resetHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = '98px';
+    const currentRef = mentionInputRef.current || textareaRef.current;
+    if (currentRef) {
+      currentRef.style.height = 'auto';
+      currentRef.style.height = '98px';
     }
   };
 
@@ -94,8 +99,9 @@ function PureMultimodalInput({
   );
 
   useEffect(() => {
-    if (textareaRef.current) {
-      const domValue = textareaRef.current.value;
+    const currentRef = mentionInputRef.current || textareaRef.current;
+    if (currentRef) {
+      const domValue = currentRef.value;
       // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
       setInput(finalValue);
@@ -113,6 +119,14 @@ function PureMultimodalInput({
     setInput(event.target.value);
     adjustHeight();
   };
+
+  const handleAgentSwitch = useCallback((agentId: string, agentName: string) => {
+    // Switch to the mentioned agent
+    onAgentChange(agentId);
+    
+    // Optional: Show a toast notification
+    // toast.success(`Switched to ${agentName}`);
+  }, [onAgentChange]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
@@ -152,7 +166,8 @@ function PureMultimodalInput({
     setInput('');
 
     if (width && width > 768) {
-      textareaRef.current?.focus();
+      const currentRef = mentionInputRef.current || textareaRef.current;
+      currentRef?.focus();
     }
   }, [
     input,
@@ -300,18 +315,19 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        data-testid="multimodal-input"
-        ref={textareaRef}
-        placeholder="Send a message..."
+      <AgentMentionInput
+        ref={mentionInputRef}
         value={input}
-        onChange={handleInput}
+        onChange={setInput}
+        onAgentSwitch={handleAgentSwitch}
+        placeholder="Send a message... (Type @ to mention agents)"
+        disabled={status !== 'ready'}
         className={cx(
           'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
           className,
         )}
-        rows={2}
         autoFocus
+        rows={2}
         onKeyDown={(event) => {
           if (
             event.key === 'Enter' &&

@@ -1,10 +1,13 @@
 # Priorities
 
-test mailchimp composio integration
+@ mention agents
+RAG test with pinecone
 
-enable vs disable different tools in tool kits
+fix mailchimp composio integration
 
-- ie twitter bookmarks
+enable vs disable different tools in tool kits and assign tools to agent configs
+
+- ie enable twitter bookmarks
 
 disable artifacts for now
 

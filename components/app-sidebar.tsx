@@ -70,7 +70,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         {user && (
           <>
             {/* Fixed navigation links at the top */}
-            <div className="px-3 py-4 space-y-1 flex-shrink-0">
+            <div className="px-3 py-4 space-y-1 shrink-0">
               <SidebarMenu>
                 {/* Connections - available to all users */}
                 <SidebarMenuItem>
