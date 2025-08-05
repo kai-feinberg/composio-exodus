@@ -29,6 +29,7 @@ const SUPPORTED_TOOLKITS = [
   "GMAIL",
   "TWITTER",
   "MAILCHIMP",
+  "SLACK",
 ];
 
 export async function GET() {

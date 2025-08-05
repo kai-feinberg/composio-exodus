@@ -40,7 +40,7 @@ export default async function ConnectionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="flex items-start space-x-3">
               <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
                 <div className="size-2 bg-blue-500 rounded-full" />
@@ -66,6 +66,15 @@ export default async function ConnectionsPage() {
               <div>
                 <h4 className="font-medium text-sm">Email Marketing</h4>
                 <p className="text-xs text-muted-foreground">Manage campaigns, lists, subscribers</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded">
+                <div className="size-2 bg-purple-500 rounded-full" />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm">Team Communication</h4>
+                <p className="text-xs text-muted-foreground">Send messages, manage channels, collaborate</p>
               </div>
             </div>
           </div>

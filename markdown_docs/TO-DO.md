@@ -1,5 +1,7 @@
 # Priorities
 
+Tell the agent not to be stupid and request too many items otherwise it'll fill up its entire context window.
+
 @ mention agents
 RAG test with pinecone
 

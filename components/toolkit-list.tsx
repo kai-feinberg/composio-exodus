@@ -56,6 +56,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         gmail: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GMAIL || '',
         twitter: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_TWITTER || '',
         mailchimp: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_MAILCHIMP || '',
+        slack: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_SLACK || '',
       };
 
       const authConfigId = authConfigMap[toolkit.slug];
@@ -274,6 +275,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
               <li><strong>Gmail:</strong> Send emails, read your inbox, organize messages</li>
               <li><strong>Twitter:</strong> Post tweets, manage your Twitter presence, engage with followers</li>
               <li><strong>Mailchimp:</strong> Manage email campaigns, subscriber lists, and marketing automation</li>
+              <li><strong>Slack:</strong> Send messages, manage channels, create reminders, and collaborate with your team</li>
             </ul>
             <p className="mt-4 text-sm">
               Your data is secure - we only access what you explicitly authorize through OAuth.
