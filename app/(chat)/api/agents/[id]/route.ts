@@ -7,7 +7,7 @@ import { z } from 'zod';
 const updateAgentSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
-  systemPrompt: z.string().min(1).max(100000).optional(), // 100KB limit for large prompts from DOCX files
+  systemPrompt: z.string().min(1).max(300000).optional(), // 300KB limit for large prompts from DOCX files
   modelId: z.enum(['chat-model', 'chat-model-reasoning']).optional(),
 });
 
@@ -25,10 +25,13 @@ export async function GET(
 
     // Check admin access
     await requireOrgAdmin();
-    
+
     const orgId = await getActiveOrganization();
     if (!orgId) {
-      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'No active organization',
+      ).toResponse();
     }
 
     const agent = await getAgentById({ id });
@@ -39,7 +42,10 @@ export async function GET(
 
     // Check if agent belongs to the organization
     if (agent.organizationId !== orgId) {
-      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
+      return new ChatSDKError(
+        'forbidden:chat',
+        'Agent not found in your organization',
+      ).toResponse();
     }
 
     return Response.json({ agent }, { status: 200 });
@@ -48,8 +54,14 @@ export async function GET(
       return error.toResponse();
     }
 
-    if (error instanceof Error && error.message.includes('Admin access required')) {
-      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    if (
+      error instanceof Error &&
+      error.message.includes('Admin access required')
+    ) {
+      return new ChatSDKError(
+        'forbidden:api',
+        'Admin access required',
+      ).toResponse();
     }
 
     return new ChatSDKError(
@@ -73,10 +85,13 @@ export async function PUT(
 
     // Check admin access
     await requireOrgAdmin();
-    
+
     const orgId = await getActiveOrganization();
     if (!orgId) {
-      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'No active organization',
+      ).toResponse();
     }
 
     // Check if agent exists and belongs to organization
@@ -87,7 +102,10 @@ export async function PUT(
     }
 
     if (existingAgent.organizationId !== orgId) {
-      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
+      return new ChatSDKError(
+        'forbidden:chat',
+        'Agent not found in your organization',
+      ).toResponse();
     }
 
     const json = await request.json();
@@ -111,8 +129,14 @@ export async function PUT(
       return error.toResponse();
     }
 
-    if (error instanceof Error && error.message.includes('Admin access required')) {
-      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    if (
+      error instanceof Error &&
+      error.message.includes('Admin access required')
+    ) {
+      return new ChatSDKError(
+        'forbidden:api',
+        'Admin access required',
+      ).toResponse();
     }
 
     return new ChatSDKError(
@@ -136,10 +160,13 @@ export async function DELETE(
 
     // Check admin access
     await requireOrgAdmin();
-    
+
     const orgId = await getActiveOrganization();
     if (!orgId) {
-      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'No active organization',
+      ).toResponse();
     }
 
     // Check if agent exists and belongs to organization
@@ -150,7 +177,10 @@ export async function DELETE(
     }
 
     if (existingAgent.organizationId !== orgId) {
-      return new ChatSDKError('forbidden:chat', 'Agent not found in your organization').toResponse();
+      return new ChatSDKError(
+        'forbidden:chat',
+        'Agent not found in your organization',
+      ).toResponse();
     }
 
     const agent = await deleteAgent({ id });
@@ -161,8 +191,14 @@ export async function DELETE(
       return error.toResponse();
     }
 
-    if (error instanceof Error && error.message.includes('Admin access required')) {
-      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    if (
+      error instanceof Error &&
+      error.message.includes('Admin access required')
+    ) {
+      return new ChatSDKError(
+        'forbidden:api',
+        'Admin access required',
+      ).toResponse();
     }
 
     return new ChatSDKError(

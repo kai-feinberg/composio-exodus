@@ -7,7 +7,7 @@ import { z } from 'zod';
 const createAgentSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  systemPrompt: z.string().min(1).max(100000), // 100KB limit for large prompts from DOCX files
+  systemPrompt: z.string().min(1).max(300000), // 300KB limit for large prompts from DOCX files
   modelId: z.enum(['chat-model', 'chat-model-reasoning']),
 });
 
@@ -21,14 +21,20 @@ export async function GET() {
 
     // Check admin access
     await requireOrgAdmin();
-    
+
     const orgId = await getActiveOrganization();
     if (!orgId) {
-      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'No active organization',
+      ).toResponse();
     }
 
     // Get agents scoped to the organization
-    const agents = await getAgentsByUserId({ userId: session.user.id, organizationId: orgId });
+    const agents = await getAgentsByUserId({
+      userId: session.user.id,
+      organizationId: orgId,
+    });
 
     return Response.json({ agents }, { status: 200 });
   } catch (error) {
@@ -36,8 +42,14 @@ export async function GET() {
       return error.toResponse();
     }
 
-    if (error instanceof Error && error.message.includes('Admin access required')) {
-      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    if (
+      error instanceof Error &&
+      error.message.includes('Admin access required')
+    ) {
+      return new ChatSDKError(
+        'forbidden:api',
+        'Admin access required',
+      ).toResponse();
     }
 
     return new ChatSDKError(
@@ -57,10 +69,13 @@ export async function POST(request: Request) {
   try {
     // Check admin access
     await requireOrgAdmin();
-    
+
     const orgId = await getActiveOrganization();
     if (!orgId) {
-      return new ChatSDKError('bad_request:api', 'No active organization').toResponse();
+      return new ChatSDKError(
+        'bad_request:api',
+        'No active organization',
+      ).toResponse();
     }
     const json = await request.json();
 
@@ -121,7 +136,7 @@ export async function POST(request: Request) {
           )
         ) {
           userErrorDetails.push(
-            'System prompt must be 100,000 characters or less',
+            'System prompt must be 300,000 characters or less',
           );
         } else {
           userErrorDetails.push('Invalid system prompt');
@@ -156,8 +171,14 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
 
-    if (error instanceof Error && error.message.includes('Admin access required')) {
-      return new ChatSDKError('forbidden:api', 'Admin access required').toResponse();
+    if (
+      error instanceof Error &&
+      error.message.includes('Admin access required')
+    ) {
+      return new ChatSDKError(
+        'forbidden:api',
+        'Admin access required',
+      ).toResponse();
     }
 
     console.error('❌ Agent creation failed:', {

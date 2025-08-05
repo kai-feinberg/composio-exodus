@@ -420,7 +420,11 @@ export async function POST(request: Request) {
           system: finalSystemPrompt,
           messages: convertToModelMessages(uiMessages as any),
           stopWhen: stepCountIs(5),
-          experimental_transform: smoothStream({ chunking: 'word' }),
+          experimental_transform: smoothStream({
+            delayInMs: 20,
+            // chunking: 'word',
+            chunking: /./g, // Use regex to chunk by character
+          }),
           tools: allTools,
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

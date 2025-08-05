@@ -116,7 +116,6 @@ Supports four artifact types:
 Create `.env.local` with required variables (see `.env.example` in original repo):
 
 - `POSTGRES_URL` - Database connection
-- `AUTH_SECRET` - NextAuth secret
 - AI provider API keys
 
 ## Testing
