@@ -121,8 +121,8 @@ export const AgentMentionInput = forwardRef<HTMLTextAreaElement, AgentMentionInp
             className={cn(
               // Base UI wrapper styles
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=closed]:animate-out data-[state=open]:animate-in",
-              // Custom sizing for agent popover
-              "min-w-[300px] max-w-[400px]"
+              // Custom sizing for agent popover with scroll
+              "w-48 max-h-80 overflow-y-auto"
             )}
             side="top"
             align="start"
@@ -158,7 +158,7 @@ export const AgentMentionInput = forwardRef<HTMLTextAreaElement, AgentMentionInp
                     // Base UI wrapper styles
                     "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-50",
                     // Custom styling for agent items
-                    "items-start gap-3"
+                    "items-start gap-2"
                   )}
                 >
                   <div className="shrink-0 mt-0.5">
@@ -170,13 +170,10 @@ export const AgentMentionInput = forwardRef<HTMLTextAreaElement, AgentMentionInp
                       {agent.name}
                     </div>
                     {agent.description && (
-                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1 truncate">
                         {agent.description}
                       </div>
                     )}
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Model: {agent.modelId === 'chat-model' ? 'Chat' : 'Reasoning'}
-                    </div>
                   </div>
                 </Mention.Item>
               );

@@ -127,6 +127,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
               const statusData = await statusResponse.json();
 
               if (statusData.status === 'ACTIVE') {
+                connectionCompleted = true;
                 authWindow.close();
                 toast.success(`Successfully connected to ${toolkit.name}!`);
                 await fetchToolkits(); // Refresh the list
@@ -136,6 +137,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
                 statusData.status === 'FAILED' ||
                 statusData.status === 'EXPIRED'
               ) {
+                connectionCompleted = true;
                 authWindow.close();
                 toast.error(`Failed to connect to ${toolkit.name}`);
                 return;
@@ -155,11 +157,36 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         setTimeout(pollStatus, 2000);
 
         // Also listen for the window to close manually
+        let connectionCompleted = false;
         const checkClosed = setInterval(() => {
           if (authWindow.closed) {
             clearInterval(checkClosed);
-            // Refresh toolkits in case connection completed
-            setTimeout(fetchToolkits, 1000);
+            // Only refresh if connection wasn't already completed
+            if (!connectionCompleted) {
+              // User closed window manually - check final status after a delay
+              setTimeout(async () => {
+                try {
+                  const statusResponse = await fetch(
+                    `/api/connections/status?connectionId=${data.connectionId}`,
+                  );
+                  if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    if (statusData.status === 'ACTIVE') {
+                      toast.success(`Successfully connected to ${toolkit.name}!`);
+                      await fetchToolkits();
+                      onConnectionChange?.();
+                    } else if (statusData.status === 'FAILED' || statusData.status === 'EXPIRED') {
+                      toast.error(`Failed to connect to ${toolkit.name}`);
+                    }
+                    // For other statuses (INITIALIZING, INITIATED), don't show anything
+                    // as the connection was likely cancelled
+                  }
+                } catch (error) {
+                  // Don't show error for cancelled connections
+                  console.log('Connection check after window close failed:', error);
+                }
+              }, 2000);
+            }
           }
         }, 1000);
       } else {

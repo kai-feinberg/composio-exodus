@@ -1,5 +1,11 @@
 # Priorities
 
+tool switching in new tab
+
+- tool return parsing
+
+only add as connection if it goes through
+
 limit agent switching modal size (display just top 5 and limit width)
 
 1. enable specific tools (ie twitter bookmarks). May require custom DB table with col for toolkit (ie TWITTER) col for tool name/slug(ie TWITTER_BOOKMARKS_BY_USER) and description. Then can have agents with col linking to specific rows in the tools table. Then when getting the tools in composio.ts we can get the tools by their slug

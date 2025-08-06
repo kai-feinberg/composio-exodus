@@ -132,7 +132,7 @@ export function AgentSelector({
           <ChevronDown size={14} className="opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-48 max-h-80 overflow-y-auto">
         <DropdownMenuLabel className="flex items-center gap-2">
           <Bot size={14} />
           Choose Agent
@@ -143,7 +143,7 @@ export function AgentSelector({
           <DropdownMenuItem
             key={agent.id}
             onClick={() => onAgentChange(agent.id)}
-            className="flex items-start gap-3 py-3 cursor-pointer"
+            className="flex items-start gap-2 py-2 cursor-pointer"
           >
             <div className="shrink-0 mt-0.5">
               {selectedAgentId === agent.id ? (
@@ -156,13 +156,10 @@ export function AgentSelector({
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">{agent.name}</div>
               {agent.description && (
-                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1 truncate">
                   {agent.description}
                 </div>
               )}
-              <div className="text-xs text-muted-foreground mt-1">
-                Model: {agent.modelId === 'chat-model' ? 'Chat' : 'Reasoning'}
-              </div>
             </div>
           </DropdownMenuItem>
         ))}

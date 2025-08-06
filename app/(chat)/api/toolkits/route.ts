@@ -19,6 +19,7 @@ type ToolkitResponse = {
 
 type ConnectedAccount = {
   id: string;
+  status: "INITIALIZING" | "INITIATED" | "ACTIVE" | "FAILED" | "EXPIRED" | "INACTIVE";
   toolkit: {
     slug: string;
   };
@@ -56,8 +57,9 @@ export async function GET() {
       });
 
       // Extract toolkit slugs and connection IDs from connected accounts
+      // Only include accounts with ACTIVE status
       connectedAccounts.items.forEach((account: ConnectedAccount) => {
-        if (account.toolkit?.slug && account.id) {
+        if (account.toolkit?.slug && account.id && account.status === 'ACTIVE') {
           connectedToolkitMap.set(
             account.toolkit.slug.toUpperCase(),
             account.id,
