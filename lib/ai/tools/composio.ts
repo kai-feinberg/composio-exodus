@@ -75,6 +75,9 @@ export async function getComposioTools(
 
     // Get tools from Composio with connection mapping
     // Pass the first connected account for the user context
+
+    // TO DO: FILTER TO SPECIFIC TOOLS BY NAME
+    // TO DO: ADD TOOL RESULT PARSING LOGIC WITH AFTER EXECUTION MODIFIER
     const firstConnectionId = connectedToolkits[0]?.connectionId;
     const rawTools = await composio.tools.get(userId, {
       toolkits: toolkitNames,
