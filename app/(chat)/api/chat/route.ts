@@ -331,13 +331,10 @@ export async function POST(request: Request) {
         // Fetch user's connected toolkits and Composio tools
         let composioTools = {};
         try {
-          console.log(`🔄 Loading Composio tools for user: ${session.user.id}`);
-          composioTools = await getComposioTools(session.user.id);
+          console.log(`🔄 Loading Composio tools for user: ${session.user.id}${selectedAgentId ? `, agent: ${selectedAgentId}` : ''}`);
+          composioTools = await getComposioTools(session.user.id, { agentId: selectedAgentId });
           const toolNames = Object.keys(composioTools);
-          // console.log(
-          //   `✅ Successfully loaded ${toolNames.length} Composio tools:`,
-          //   toolNames,
-          // );
+          console.log(`✅ Loaded ${toolNames.length} tools:`, toolNames.slice(0, 5));
         } catch (error) {
           console.error('❌ Failed to load Composio tools:', error);
           // Continue without Composio tools if this fails

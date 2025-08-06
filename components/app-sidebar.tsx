@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { Bot, Settings, Shield, TestTube } from 'lucide-react';
+import { Bot, Settings, Shield, TestTube, Wrench } from 'lucide-react';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -56,7 +56,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     router.refresh();
                   }}
                 >
-                  <PlusIcon className="size-4" />
+                  <PlusIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent align="end" className="font-medium">
@@ -157,6 +157,21 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     >
                       <Bot className="size-4 text-sidebar-foreground/70" />
                       <span className="font-medium">Manage Agents</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    className="hover:bg-sidebar-accent/70 transition-all duration-200"
+                  >
+                    <Link
+                      href="/tools/user"
+                      onClick={() => setOpenMobile(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                    >
+                      <Wrench className="size-4 text-sidebar-foreground/70" />
+                      <span className="font-medium">Manage Tools</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

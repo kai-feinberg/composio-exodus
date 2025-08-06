@@ -10,6 +10,10 @@ export interface ComposioTool {
   requiredScopes?: string[];
   no_auth: boolean;
   tags?: string[];
+  // Additional properties needed by utils
+  slug: string;
+  toolkitSlug: string;
+  requiresAuth: boolean;
 }
 
 export interface Toolkit {

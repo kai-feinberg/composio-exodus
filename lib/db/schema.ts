@@ -188,3 +188,47 @@ export const agent = pgTable('Agent', {
 });
 
 export type Agent = InferSelectModel<typeof agent>;
+
+// Tool Management Schema
+export const availableTools = pgTable('AvailableTools', {
+  slug: varchar('slug', { length: 100 }).primaryKey().notNull(),
+  toolkitSlug: varchar('toolkitSlug', { length: 100 }).notNull(),
+  toolkitName: varchar('toolkitName', { length: 100 }).notNull(),
+  displayName: varchar('displayName', { length: 200 }),
+  description: text('description'),
+  isActive: boolean('isActive').notNull().default(true),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type AvailableTool = InferSelectModel<typeof availableTools>;
+
+export const userTools = pgTable('UserTools', {
+  userId: varchar('userId', { length: 255 })
+    .notNull()
+    .references(() => user.id),
+  toolSlug: varchar('toolSlug', { length: 100 })
+    .notNull()
+    .references(() => availableTools.slug),
+  isEnabled: boolean('isEnabled').notNull().default(true),
+  enabledAt: timestamp('enabledAt').notNull().defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.toolSlug] }),
+}));
+
+export type UserTool = InferSelectModel<typeof userTools>;
+
+export const agentTools = pgTable('AgentTools', {
+  agentId: uuid('agentId')
+    .notNull()
+    .references(() => agent.id),
+  toolSlug: varchar('toolSlug', { length: 100 })
+    .notNull()
+    .references(() => availableTools.slug),
+  isEnabled: boolean('isEnabled').notNull().default(true),
+  enabledAt: timestamp('enabledAt').notNull().defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.agentId, table.toolSlug] }),
+}));
+
+export type AgentTool = InferSelectModel<typeof agentTools>;

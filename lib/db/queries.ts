@@ -29,6 +29,12 @@ import {
   type Chat,
   stream,
   agent,
+  availableTools,
+  userTools,
+  agentTools,
+  type AvailableTool,
+  type UserTool,
+  type AgentTool,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -669,5 +675,185 @@ export async function deleteAgent({ id }: { id: string }) {
     return deletedAgent;
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to delete agent');
+  }
+}
+
+// Tool Management Queries
+
+export async function getEnabledToolsForUser(userId: string): Promise<string[]> {
+  try {
+    const enabledTools = await db
+      .select({ toolSlug: userTools.toolSlug })
+      .from(userTools)
+      .where(and(
+        eq(userTools.userId, userId),
+        eq(userTools.isEnabled, true)
+      ));
+    
+    return enabledTools.map(tool => tool.toolSlug);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get enabled tools for user',
+    );
+  }
+}
+
+export async function getEnabledToolsForAgent(agentId: string): Promise<string[]> {
+  try {
+    const enabledTools = await db
+      .select({ toolSlug: agentTools.toolSlug })
+      .from(agentTools)
+      .where(and(
+        eq(agentTools.agentId, agentId),
+        eq(agentTools.isEnabled, true)
+      ));
+    
+    return enabledTools.map(tool => tool.toolSlug);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get enabled tools for agent',
+    );
+  }
+}
+
+export async function getAvailableTools(): Promise<AvailableTool[]> {
+  try {
+    return await db
+      .select()
+      .from(availableTools)
+      .where(eq(availableTools.isActive, true))
+      .orderBy(availableTools.displayName);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get available tools',
+    );
+  }
+}
+
+export async function getUserToolPreferences(userId: string): Promise<UserTool[]> {
+  try {
+    return await db
+      .select()
+      .from(userTools)
+      .where(eq(userTools.userId, userId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user tool preferences',
+    );
+  }
+}
+
+export async function getAgentToolConfiguration(agentId: string): Promise<AgentTool[]> {
+  try {
+    return await db
+      .select()
+      .from(agentTools)
+      .where(eq(agentTools.agentId, agentId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get agent tool configuration',
+    );
+  }
+}
+
+// Tool management mutations
+
+export async function setUserToolEnabled(userId: string, toolSlug: string, enabled: boolean) {
+  try {
+    await db
+      .insert(userTools)
+      .values({ userId, toolSlug, isEnabled: enabled })
+      .onConflictDoUpdate({
+        target: [userTools.userId, userTools.toolSlug],
+        set: { isEnabled: enabled, enabledAt: new Date() }
+      });
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to set user tool enabled',
+    );
+  }
+}
+
+export async function setAgentToolEnabled(agentId: string, toolSlug: string, enabled: boolean) {
+  try {
+    await db
+      .insert(agentTools)
+      .values({ agentId, toolSlug, isEnabled: enabled })
+      .onConflictDoUpdate({
+        target: [agentTools.agentId, agentTools.toolSlug],
+        set: { isEnabled: enabled, enabledAt: new Date() }
+      });
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to set agent tool enabled',
+    );
+  }
+}
+
+export async function addAvailableTool(tool: {
+  slug: string;
+  toolkitSlug: string;
+  toolkitName: string;
+  displayName?: string;
+  description?: string;
+}) {
+  try {
+    await db.insert(availableTools).values(tool);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to add available tool',
+    );
+  }
+}
+
+export async function updateAvailableTool(slug: string, updates: {
+  displayName?: string;
+  description?: string;
+  isActive?: boolean;
+}) {
+  try {
+    const updateData = { ...updates, updatedAt: new Date() };
+    
+    const [updatedTool] = await db
+      .update(availableTools)
+      .set(updateData)
+      .where(eq(availableTools.slug, slug))
+      .returning();
+
+    return updatedTool;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update available tool',
+    );
+  }
+}
+
+export async function deleteAvailableTool(slug: string) {
+  try {
+    // First delete all user and agent associations
+    await db.delete(userTools).where(eq(userTools.toolSlug, slug));
+    await db.delete(agentTools).where(eq(agentTools.toolSlug, slug));
+    
+    // Then delete the tool itself
+    const [deletedTool] = await db
+      .delete(availableTools)
+      .where(eq(availableTools.slug, slug))
+      .returning();
+
+    return deletedTool;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete available tool',
+    );
   }
 }

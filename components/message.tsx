@@ -19,7 +19,14 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
-import { ComposioTool } from './composio-tool';
+import {
+  AITool,
+  AIToolHeader,
+  AIToolContent,
+  AIToolParameters,
+  AIToolResult,
+  type AIToolStatus,
+} from '@/components/ui/kibo-ui/ai/tool';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -309,7 +316,7 @@ const PurePreviewMessage = ({
                 }
               }
 
-              // Handle Composio tools (tools that aren't built-in)
+              // Handle external tools (tools that aren't built-in)
               if (
                 type.startsWith('tool-') &&
                 ![
@@ -322,15 +329,92 @@ const PurePreviewMessage = ({
                 const { toolCallId, state, input, output } = part as any;
                 const toolName = type.replace('tool-', ''); // Remove 'tool-' prefix
 
+                // Helper function to convert AI SDK state to AITool status
+                const getToolStatus = (state?: string, hasError?: boolean): AIToolStatus => {
+                  if (hasError) return 'error';
+                  
+                  switch (state) {
+                    case 'partial-call':
+                      return 'pending';
+                    case 'call':
+                      return 'running';
+                    case 'result':
+                      return 'running';
+                    case 'output-available':
+                      return 'completed';
+                    default:
+                      return 'pending';
+                  }
+                };
+
+                // Helper function to format tool name for display
+                const formatToolName = (toolName: string): string => {
+                  // Convert GMAIL_SEND_EMAIL to "Gmail Send Email"
+                  return toolName
+                    .split('_')
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                };
+
+                // Check if there's an error in the output
+                const hasError =
+                  output &&
+                  typeof output === 'object' &&
+                  ('error' in output || 'errorMessage' in output) &&
+                  !('data' in output || 'success' in output || 'result' in output);
+
+                const status = getToolStatus(state, hasError);
+                const displayName = formatToolName(toolName);
+
+                // Determine if the tool should be open by default
+                const shouldOpenByDefault = status === 'completed' || status === 'error';
+
+                // Format output for display
+                const formatOutput = (data: any) => {
+                  if (typeof data === 'string') return data;
+                  if (typeof data === 'object') {
+                    try {
+                      return JSON.stringify(data, null, 2);
+                    } catch {
+                      return String(data);
+                    }
+                  }
+                  return String(data);
+                };
+
                 return (
                   <div key={toolCallId} className="my-4">
-                    <ComposioTool
-                      toolName={toolName}
-                      toolCallId={toolCallId}
-                      state={state}
-                      input={input}
-                      output={output}
-                    />
+                    <AITool defaultOpen={shouldOpenByDefault}>
+                      <AIToolHeader
+                        status={status}
+                        name={displayName}
+                        description={`External tool: ${toolName}`}
+                      />
+                      <AIToolContent>
+                        {input && Object.keys(input).length > 0 && (
+                          <AIToolParameters parameters={input} />
+                        )}
+
+                        {state === 'output-available' && output && (
+                          <AIToolResult
+                            result={hasError ? undefined : formatOutput(output)}
+                            error={
+                              hasError
+                                ? String(output.error || output.message || 'Unknown error')
+                                : undefined
+                            }
+                          />
+                        )}
+
+                        {(state === 'result' || state === 'call' || state === 'partial-call') &&
+                          !output && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted/50 rounded">
+                              <div className="animate-pulse">⏳</div>
+                              Executing {displayName.toLowerCase()}...
+                            </div>
+                          )}
+                      </AIToolContent>
+                    </AITool>
                   </div>
                 );
               }
