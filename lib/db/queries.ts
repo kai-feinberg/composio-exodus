@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  max,
   or,
   type SQL,
 } from 'drizzle-orm';
@@ -587,25 +588,19 @@ export async function createAgent({
   }
 }
 
-export async function getAgentsByUserId({ 
-  userId, 
-  organizationId 
-}: { 
+export async function getAgentsByUserId({
+  userId,
+  organizationId,
+}: {
   userId: string;
   organizationId?: string;
 }) {
   try {
     // Get agents owned by user/organization AND global agents
-    const whereCondition = organizationId 
-      ? or(
-          eq(agent.organizationId, organizationId),
-          eq(agent.isGlobal, true)
-        )
-      : or(
-          eq(agent.userId, userId),
-          eq(agent.isGlobal, true)
-        );
-      
+    const whereCondition = organizationId
+      ? or(eq(agent.organizationId, organizationId), eq(agent.isGlobal, true))
+      : or(eq(agent.userId, userId), eq(agent.isGlobal, true));
+
     return await db
       .select()
       .from(agent)
@@ -680,17 +675,16 @@ export async function deleteAgent({ id }: { id: string }) {
 
 // Tool Management Queries
 
-export async function getEnabledToolsForUser(userId: string): Promise<string[]> {
+export async function getEnabledToolsForUser(
+  userId: string,
+): Promise<string[]> {
   try {
     const enabledTools = await db
       .select({ toolSlug: userTools.toolSlug })
       .from(userTools)
-      .where(and(
-        eq(userTools.userId, userId),
-        eq(userTools.isEnabled, true)
-      ));
-    
-    return enabledTools.map(tool => tool.toolSlug);
+      .where(and(eq(userTools.userId, userId), eq(userTools.isEnabled, true)));
+
+    return enabledTools.map((tool) => tool.toolSlug);
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
@@ -699,17 +693,18 @@ export async function getEnabledToolsForUser(userId: string): Promise<string[]> 
   }
 }
 
-export async function getEnabledToolsForAgent(agentId: string): Promise<string[]> {
+export async function getEnabledToolsForAgent(
+  agentId: string,
+): Promise<string[]> {
   try {
     const enabledTools = await db
       .select({ toolSlug: agentTools.toolSlug })
       .from(agentTools)
-      .where(and(
-        eq(agentTools.agentId, agentId),
-        eq(agentTools.isEnabled, true)
-      ));
-    
-    return enabledTools.map(tool => tool.toolSlug);
+      .where(
+        and(eq(agentTools.agentId, agentId), eq(agentTools.isEnabled, true)),
+      );
+
+    return enabledTools.map((tool) => tool.toolSlug);
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
@@ -733,7 +728,9 @@ export async function getAvailableTools(): Promise<AvailableTool[]> {
   }
 }
 
-export async function getUserToolPreferences(userId: string): Promise<UserTool[]> {
+export async function getUserToolPreferences(
+  userId: string,
+): Promise<UserTool[]> {
   try {
     return await db
       .select()
@@ -747,7 +744,9 @@ export async function getUserToolPreferences(userId: string): Promise<UserTool[]
   }
 }
 
-export async function getAgentToolConfiguration(agentId: string): Promise<AgentTool[]> {
+export async function getAgentToolConfiguration(
+  agentId: string,
+): Promise<AgentTool[]> {
   try {
     return await db
       .select()
@@ -763,14 +762,18 @@ export async function getAgentToolConfiguration(agentId: string): Promise<AgentT
 
 // Tool management mutations
 
-export async function setUserToolEnabled(userId: string, toolSlug: string, enabled: boolean) {
+export async function setUserToolEnabled(
+  userId: string,
+  toolSlug: string,
+  enabled: boolean,
+) {
   try {
     await db
       .insert(userTools)
       .values({ userId, toolSlug, isEnabled: enabled })
       .onConflictDoUpdate({
         target: [userTools.userId, userTools.toolSlug],
-        set: { isEnabled: enabled, enabledAt: new Date() }
+        set: { isEnabled: enabled, enabledAt: new Date() },
       });
   } catch (error) {
     throw new ChatSDKError(
@@ -780,14 +783,18 @@ export async function setUserToolEnabled(userId: string, toolSlug: string, enabl
   }
 }
 
-export async function setAgentToolEnabled(agentId: string, toolSlug: string, enabled: boolean) {
+export async function setAgentToolEnabled(
+  agentId: string,
+  toolSlug: string,
+  enabled: boolean,
+) {
   try {
     await db
       .insert(agentTools)
       .values({ agentId, toolSlug, isEnabled: enabled })
       .onConflictDoUpdate({
         target: [agentTools.agentId, agentTools.toolSlug],
-        set: { isEnabled: enabled, enabledAt: new Date() }
+        set: { isEnabled: enabled, enabledAt: new Date() },
       });
   } catch (error) {
     throw new ChatSDKError(
@@ -814,14 +821,17 @@ export async function addAvailableTool(tool: {
   }
 }
 
-export async function updateAvailableTool(slug: string, updates: {
-  displayName?: string;
-  description?: string;
-  isActive?: boolean;
-}) {
+export async function updateAvailableTool(
+  slug: string,
+  updates: {
+    displayName?: string;
+    description?: string;
+    isActive?: boolean;
+  },
+) {
   try {
     const updateData = { ...updates, updatedAt: new Date() };
-    
+
     const [updatedTool] = await db
       .update(availableTools)
       .set(updateData)
@@ -842,7 +852,7 @@ export async function deleteAvailableTool(slug: string) {
     // First delete all user and agent associations
     await db.delete(userTools).where(eq(userTools.toolSlug, slug));
     await db.delete(agentTools).where(eq(agentTools.toolSlug, slug));
-    
+
     // Then delete the tool itself
     const [deletedTool] = await db
       .delete(availableTools)
@@ -854,6 +864,123 @@ export async function deleteAvailableTool(slug: string) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to delete available tool',
+    );
+  }
+}
+
+// Toolkit-level queries
+export async function getAvailableToolkits(): Promise<
+  Array<{
+    toolkitName: string;
+    toolkitSlug: string;
+    toolCount: number;
+    description?: string;
+  }>
+> {
+  try {
+    const toolkits = await db
+      .select({
+        toolkitName: availableTools.toolkitName,
+        toolkitSlug: availableTools.toolkitSlug,
+        toolCount: count(availableTools.slug),
+        // Take the first description found for the toolkit (using max as a simple way to get one)
+        description: max(availableTools.description),
+      })
+      .from(availableTools)
+      .where(eq(availableTools.isActive, true))
+      .groupBy(availableTools.toolkitName, availableTools.toolkitSlug)
+      .orderBy(availableTools.toolkitName);
+
+    return toolkits;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get available toolkits',
+    );
+  }
+}
+
+export async function getAgentEnabledToolkits(
+  agentId: string,
+): Promise<string[]> {
+  try {
+    // Get all available toolkits
+    const availableToolkitData = await db
+      .select({
+        toolkitName: availableTools.toolkitName,
+        toolCount: count(availableTools.slug),
+      })
+      .from(availableTools)
+      .where(eq(availableTools.isActive, true))
+      .groupBy(availableTools.toolkitName);
+
+    // Get enabled tools for the agent
+    const enabledTools = await db
+      .select({
+        toolkitName: availableTools.toolkitName,
+        enabledCount: count(agentTools.toolSlug),
+      })
+      .from(agentTools)
+      .innerJoin(availableTools, eq(agentTools.toolSlug, availableTools.slug))
+      .where(
+        and(eq(agentTools.agentId, agentId), eq(agentTools.isEnabled, true)),
+      )
+      .groupBy(availableTools.toolkitName);
+
+    // Find toolkits where all tools are enabled
+    const fullyEnabledToolkits: string[] = [];
+
+    for (const available of availableToolkitData) {
+      const enabled = enabledTools.find(
+        (e) => e.toolkitName === available.toolkitName,
+      );
+      if (enabled && enabled.enabledCount === available.toolCount) {
+        fullyEnabledToolkits.push(available.toolkitName);
+      }
+    }
+
+    return fullyEnabledToolkits;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get agent enabled toolkits',
+    );
+  }
+}
+
+export async function setAgentToolkitEnabled(
+  agentId: string,
+  toolkitName: string,
+  enabled: boolean,
+) {
+  try {
+    // Get all tools for the toolkit
+    const toolkitTools = await db
+      .select({ slug: availableTools.slug })
+      .from(availableTools)
+      .where(
+        and(
+          eq(availableTools.toolkitName, toolkitName),
+          eq(availableTools.isActive, true),
+        ),
+      );
+
+    // Enable/disable all tools in the toolkit
+    for (const tool of toolkitTools) {
+      await db
+        .insert(agentTools)
+        .values({ agentId, toolSlug: tool.slug, isEnabled: enabled })
+        .onConflictDoUpdate({
+          target: [agentTools.agentId, agentTools.toolSlug],
+          set: { isEnabled: enabled, enabledAt: new Date() },
+        });
+    }
+
+    return toolkitTools.length;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to set agent toolkit enabled',
     );
   }
 }

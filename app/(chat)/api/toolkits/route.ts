@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import composio from "@/lib/services/composio";
-import { ChatSDKError } from "@/lib/errors";
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import composio from '@/lib/services/composio';
+import { ChatSDKError } from '@/lib/errors';
 
 // Custom types since they're not exported from @composio/core
 type ToolkitResponse = {
@@ -24,19 +24,26 @@ type ConnectedAccount = {
   };
 };
 
-// Hardcoded list of supported toolkits
+// Supported toolkits that match populate-tools-direct.ts
 const SUPPORTED_TOOLKITS = [
-  "GMAIL",
-  "TWITTER",
-  "MAILCHIMP",
-  "SLACK",
+  'YOUTUBE',
+  'TWITTER',
+  'REDDIT',
+  'NOTION',
+  'SLACK',
+  'SLACKBOT',
+  'ACTIVE_CAMPAIGN',
+  'EXA',
+  'GOOGLEDOCS',
+  'GMAIL',
+  'GOOGLEDRIVE',
 ];
 
 export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return new ChatSDKError("unauthorized:chat").toResponse();
+    return new ChatSDKError('unauthorized:chat').toResponse();
   }
 
   try {
@@ -53,12 +60,12 @@ export async function GET() {
         if (account.toolkit?.slug && account.id) {
           connectedToolkitMap.set(
             account.toolkit.slug.toUpperCase(),
-            account.id
+            account.id,
           );
         }
       });
     } catch (error) {
-      console.error("Failed to fetch connected accounts:", error);
+      console.error('Failed to fetch connected accounts:', error);
       // Continue without connection status if this fails
     }
 
@@ -89,10 +96,10 @@ export async function GET() {
 
     return NextResponse.json({ toolkits });
   } catch (error) {
-    console.error("Failed to fetch toolkits:", error);
+    console.error('Failed to fetch toolkits:', error);
     return NextResponse.json(
-      { error: "Failed to fetch toolkits" },
-      { status: 500 }
+      { error: 'Failed to fetch toolkits' },
+      { status: 500 },
     );
   }
 }

@@ -1,7 +1,13 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { ToolkitList } from '@/components/toolkit-list';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Settings, Zap } from 'lucide-react';
 
 export default async function ConnectionsPage() {
@@ -36,7 +42,8 @@ export default async function ConnectionsPage() {
             <span>AI-Powered Automation</span>
           </CardTitle>
           <CardDescription>
-            Connect your favorite services to unlock powerful AI capabilities in your chats
+            Connect your favorite services to unlock powerful AI capabilities in
+            your chats
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -46,8 +53,10 @@ export default async function ConnectionsPage() {
                 <div className="size-2 bg-blue-500 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Email Management</h4>
-                <p className="text-xs text-muted-foreground">Send emails, read inbox, organize messages</p>
+                <h4 className="font-medium text-sm">Google Workspace</h4>
+                <p className="text-xs text-muted-foreground">
+                  Gmail, Docs, Drive integration for productivity
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -55,8 +64,10 @@ export default async function ConnectionsPage() {
                 <div className="size-2 bg-sky-500 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Social Media</h4>
-                <p className="text-xs text-muted-foreground">Post tweets, manage Twitter presence</p>
+                <h4 className="font-medium text-sm">Social & Content</h4>
+                <p className="text-xs text-muted-foreground">
+                  Twitter, YouTube, Reddit content management
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -64,8 +75,10 @@ export default async function ConnectionsPage() {
                 <div className="size-2 bg-yellow-600 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Email Marketing</h4>
-                <p className="text-xs text-muted-foreground">Manage campaigns, lists, subscribers</p>
+                <h4 className="font-medium text-sm">Productivity Tools</h4>
+                <p className="text-xs text-muted-foreground">
+                  Notion, Slack for workspace management
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -73,8 +86,10 @@ export default async function ConnectionsPage() {
                 <div className="size-2 bg-purple-500 rounded-full" />
               </div>
               <div>
-                <h4 className="font-medium text-sm">Team Communication</h4>
-                <p className="text-xs text-muted-foreground">Send messages, manage channels, collaborate</p>
+                <h4 className="font-medium text-sm">Marketing & Research</h4>
+                <p className="text-xs text-muted-foreground">
+                  Active Campaign, EXA for outreach & discovery
+                </p>
               </div>
             </div>
           </div>

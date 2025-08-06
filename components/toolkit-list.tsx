@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { ConnectionCard } from './connection-card';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,16 +39,18 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
     try {
       setError(null);
       const response = await fetch('/api/toolkits');
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch toolkits: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       setToolkits(data.toolkits || []);
     } catch (error) {
       console.error('Failed to fetch toolkits:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load toolkits');
+      setError(
+        error instanceof Error ? error.message : 'Failed to load toolkits',
+      );
       toast.error('Failed to load available services');
     } finally {
       setIsLoading(false);
@@ -53,16 +61,26 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
     try {
       // Map toolkit slugs to their corresponding auth config IDs
       const authConfigMap: Record<string, string> = {
-        gmail: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GMAIL || '',
+        youtube: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_YOUTUBE || '',
         twitter: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_TWITTER || '',
-        mailchimp: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_MAILCHIMP || '',
+        reddit: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_REDDIT || '',
+        notion: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_NOTION || '',
         slack: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_SLACK || '',
+        slackbot: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_SLACKBOT || '',
+        active_campaign:
+          process.env.NEXT_PUBLIC_COMPOSIO_AUTH_ACTIVE_CAMPAIGN || '',
+        exa: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_EXA || '',
+        googledocs: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GOOGLEDOCS || '',
+        gmail: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GMAIL || '',
+        googledrive: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GOOGLEDRIVE || '',
       };
 
       const authConfigId = authConfigMap[toolkit.slug];
-      
+
       if (!authConfigId) {
-        toast.error(`No auth configuration found for ${toolkit.name}. Please check your environment variables.`);
+        toast.error(
+          `No auth configuration found for ${toolkit.name}. Please check your environment variables.`,
+        );
         return;
       }
 
@@ -78,17 +96,19 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to initiate connection: ${response.statusText}`);
+        throw new Error(
+          `Failed to initiate connection: ${response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      
+
       if (data.redirectUrl) {
         // Open the OAuth URL in a new window
         const authWindow = window.open(
           data.redirectUrl,
           'oauth',
-          'width=600,height=700,scrollbars=yes,resizable=yes'
+          'width=600,height=700,scrollbars=yes,resizable=yes',
         );
 
         if (!authWindow) {
@@ -100,25 +120,28 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         const pollStatus = async () => {
           try {
             const statusResponse = await fetch(
-              `/api/connections/status?connectionId=${data.connectionId}`
+              `/api/connections/status?connectionId=${data.connectionId}`,
             );
-            
+
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
-              
+
               if (statusData.status === 'ACTIVE') {
                 authWindow.close();
                 toast.success(`Successfully connected to ${toolkit.name}!`);
                 await fetchToolkits(); // Refresh the list
                 onConnectionChange?.();
                 return;
-              } else if (statusData.status === 'FAILED' || statusData.status === 'EXPIRED') {
+              } else if (
+                statusData.status === 'FAILED' ||
+                statusData.status === 'EXPIRED'
+              ) {
                 authWindow.close();
                 toast.error(`Failed to connect to ${toolkit.name}`);
                 return;
               }
             }
-            
+
             // Continue polling if still in progress
             setTimeout(pollStatus, 2000);
           } catch (error) {
@@ -130,7 +153,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
 
         // Start polling after a short delay
         setTimeout(pollStatus, 2000);
-        
+
         // Also listen for the window to close manually
         const checkClosed = setInterval(() => {
           if (authWindow.closed) {
@@ -150,9 +173,12 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
 
   const handleDisconnect = async (connectionId: string) => {
     try {
-      const response = await fetch(`/api/connections?connectionId=${connectionId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/connections?connectionId=${connectionId}`,
+        {
+          method: 'DELETE',
+        },
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to disconnect: ${response.statusText}`);
@@ -195,8 +221,8 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
     );
   }
 
-  const connectedToolkits = toolkits.filter(t => t.isConnected);
-  const availableToolkits = toolkits.filter(t => !t.isConnected);
+  const connectedToolkits = toolkits.filter((t) => t.isConnected);
+  const availableToolkits = toolkits.filter((t) => !t.isConnected);
 
   return (
     <div className="space-y-8">
@@ -239,7 +265,7 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
             </Button>
           )}
         </div>
-        
+
         {availableToolkits.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {availableToolkits.map((toolkit) => (
@@ -254,7 +280,9 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-8">
-              <p className="text-muted-foreground">All available services are connected!</p>
+              <p className="text-muted-foreground">
+                All available services are connected!
+              </p>
             </CardContent>
           </Card>
         )}
@@ -268,17 +296,53 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         <CardContent>
           <CardDescription className="space-y-2">
             <p>
-              Connect your external accounts to enable AI-powered automation in your chats.
-              Once connected, you can ask the AI to perform actions like:
+              Connect your external accounts to enable AI-powered automation in
+              your chats. Once connected, you can ask the AI to perform actions
+              like:
             </p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><strong>Gmail:</strong> Send emails, read your inbox, organize messages</li>
-              <li><strong>Twitter:</strong> Post tweets, manage your Twitter presence, engage with followers</li>
-              <li><strong>Mailchimp:</strong> Manage email campaigns, subscriber lists, and marketing automation</li>
-              <li><strong>Slack:</strong> Send messages, manage channels, create reminders, and collaborate with your team</li>
+              <li>
+                <strong>Gmail:</strong> Send emails, read your inbox, organize
+                messages
+              </li>
+              <li>
+                <strong>Google Docs:</strong> Create, edit, and manage documents
+              </li>
+              <li>
+                <strong>Google Drive:</strong> Manage files, folders, and
+                sharing permissions
+              </li>
+              <li>
+                <strong>Twitter:</strong> Post tweets, manage your Twitter
+                presence, engage with followers
+              </li>
+              <li>
+                <strong>YouTube:</strong> Manage your channel, upload videos,
+                and interact with content
+              </li>
+              <li>
+                <strong>Reddit:</strong> Post content, manage subreddits, and
+                engage with communities
+              </li>
+              <li>
+                <strong>Notion:</strong> Create and manage pages, databases, and
+                workspace content
+              </li>
+              <li>
+                <strong>Slack:</strong> Send messages, manage channels, and
+                collaborate with your team
+              </li>
+              <li>
+                <strong>Active Campaign:</strong> Manage email marketing
+                campaigns and automation
+              </li>
+              <li>
+                <strong>EXA:</strong> Enhanced web search and content discovery
+              </li>
             </ul>
             <p className="mt-4 text-sm">
-              Your data is secure - we only access what you explicitly authorize through OAuth.
+              Your data is secure - we only access what you explicitly authorize
+              through OAuth.
             </p>
           </CardDescription>
         </CardContent>

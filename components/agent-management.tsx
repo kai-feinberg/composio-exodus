@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { AgentToolkitSelector } from './agent-toolkit-selector';
 import type { Agent } from '@/lib/db/schema';
 import { toast } from 'sonner';
 import { chatModels } from '@/lib/ai/models';
@@ -213,7 +214,7 @@ export function AgentManagement({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot size={20} />
@@ -367,6 +368,27 @@ export function AgentManagement({
               />
             )}
           </div>
+
+          {/* Toolkit Configuration Section */}
+          {editingAgent && (
+            <div className="space-y-2">
+              <AgentToolkitSelector
+                agentId={editingAgent.id}
+                agentName={editingAgent.name}
+                onConfigurationChange={() => {
+                  // Optional: Add any refresh logic if needed
+                }}
+              />
+            </div>
+          )}
+          {!editingAgent && (
+            <div className="rounded-lg border border-dashed p-4 text-center text-muted-foreground">
+              <p className="text-sm">
+                Toolkit configuration will be available after creating the
+                agent.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleCancel}>
               <X className="size-4 mr-2" />
