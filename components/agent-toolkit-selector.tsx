@@ -204,7 +204,7 @@ export function AgentToolkitSelector({
             {enabledCount} of {totalCount} toolkits enabled
           </p>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex gap-1 shrink-0">
           <Button
             variant="ghost"
             onClick={copyFromUserDefaults}
@@ -257,7 +257,7 @@ export function AgentToolkitSelector({
                 </h4>
                 <Badge
                   variant="outline"
-                  className="text-xs h-4 px-1 flex-shrink-0"
+                  className="text-xs h-4 px-1 shrink-0"
                 >
                   {toolkit.toolCount}
                 </Badge>
@@ -273,7 +273,7 @@ export function AgentToolkitSelector({
               onCheckedChange={(checked) =>
                 handleToolkitToggle(toolkit.toolkitName, checked)
               }
-              className="flex-shrink-0 scale-75"
+              className="shrink-0 scale-75"
             />
           </div>
         ))}

@@ -891,7 +891,11 @@ export async function getAvailableToolkits(): Promise<
       .groupBy(availableTools.toolkitName, availableTools.toolkitSlug)
       .orderBy(availableTools.toolkitName);
 
-    return toolkits;
+    // Convert null to undefined for TypeScript compatibility
+    return toolkits.map(toolkit => ({
+      ...toolkit,
+      description: toolkit.description || undefined
+    }));
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
@@ -981,6 +985,51 @@ export async function setAgentToolkitEnabled(
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to set agent toolkit enabled',
+    );
+  }
+}
+
+export async function getUserEnabledToolkits(userId: string): Promise<string[]> {
+  try {
+    // Get all available toolkits
+    const availableToolkitData = await db
+      .select({
+        toolkitName: availableTools.toolkitName,
+        toolCount: count(availableTools.slug),
+      })
+      .from(availableTools)
+      .where(eq(availableTools.isActive, true))
+      .groupBy(availableTools.toolkitName);
+
+    // Get enabled tools for the user  
+    const enabledTools = await db
+      .select({
+        toolkitName: availableTools.toolkitName,
+        enabledCount: count(userTools.toolSlug),
+      })
+      .from(userTools)
+      .innerJoin(availableTools, eq(userTools.toolSlug, availableTools.slug))
+      .where(and(
+        eq(userTools.userId, userId),
+        eq(userTools.isEnabled, true)
+      ))
+      .groupBy(availableTools.toolkitName);
+
+    // Find toolkits where all tools are enabled
+    const fullyEnabledToolkits: string[] = [];
+    
+    for (const available of availableToolkitData) {
+      const enabled = enabledTools.find(e => e.toolkitName === available.toolkitName);
+      if (enabled && enabled.enabledCount === available.toolCount) {
+        fullyEnabledToolkits.push(available.toolkitName);
+      }
+    }
+
+    return fullyEnabledToolkits;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user enabled toolkits',
     );
   }
 }

@@ -214,7 +214,8 @@ export function AgentManagement({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col"
+        style={{ maxHeight: 'calc(100vh - 2rem)' }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot size={20} />
@@ -226,7 +227,8 @@ export function AgentManagement({
               : 'Create a new AI agent with custom instructions. You can upload .docx files for system prompts!'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input
@@ -335,7 +337,7 @@ export function AgentManagement({
                         })
                       }
                       placeholder="Extracted text will appear here..."
-                      rows={6}
+                      rows={4}
                       className="font-mono text-sm"
                       required
                     />
@@ -363,7 +365,7 @@ export function AgentManagement({
                   setFormData({ ...formData, systemPrompt: e.target.value })
                 }
                 placeholder="Enter the system prompt that defines the agent's behavior..."
-                rows={6}
+                rows={4}
                 required
               />
             )}
@@ -389,7 +391,8 @@ export function AgentManagement({
               </p>
             </div>
           )}
-          <DialogFooter>
+          </div>
+          <DialogFooter className="shrink-0 pt-4 border-t">
             <Button type="button" variant="outline" onClick={handleCancel}>
               <X className="size-4 mr-2" />
               Cancel

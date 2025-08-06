@@ -18,7 +18,7 @@ export async function GET(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = await params;
+    const { agentId } = params;
 
     // Verify agent ownership or global access
     const agent = await getAgentById({ id: agentId });
@@ -66,7 +66,7 @@ export async function POST(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = await params;
+    const { agentId } = params;
     const { toolkitName, enabled } = await request.json();
 
     if (!toolkitName || typeof enabled !== 'boolean') {

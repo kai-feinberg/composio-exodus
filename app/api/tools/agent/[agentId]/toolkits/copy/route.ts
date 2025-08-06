@@ -13,7 +13,7 @@ export async function POST(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = await params;
+    const { agentId } = params;
     const { enabledToolkits } = await request.json();
 
     if (!Array.isArray(enabledToolkits)) {

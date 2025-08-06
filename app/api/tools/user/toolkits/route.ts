@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import {
   getAvailableToolkits,
-  getUserEnabledTools,
+  getUserToolPreferences,
   getAvailableTools,
 } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
@@ -18,7 +18,7 @@ export async function GET() {
     const availableToolkits = await getAvailableToolkits();
 
     // Get user enabled tools to determine which toolkits are fully enabled
-    const userEnabledTools = await getUserEnabledTools(session.user.id);
+    const userEnabledTools = await getUserToolPreferences(session.user.id);
     const enabledToolSlugs = userEnabledTools
       .filter((tool) => tool.isEnabled)
       .map((tool) => tool.toolSlug);

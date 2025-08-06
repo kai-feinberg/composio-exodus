@@ -1,6 +1,11 @@
 import composio, { getConnectedToolkits } from '@/lib/services/composio';
 import { sanitizeToolResult } from './result-sanitizer';
-import { getEnabledToolsForUser, getEnabledToolsForAgent } from '@/lib/db/queries';
+import { 
+  getEnabledToolsForUser, 
+  getAgentEnabledToolkits, 
+  getUserEnabledToolkits,
+  getAvailableTools,
+} from '@/lib/db/queries';
 
 /**
  * Validates and fixes tool schema to ensure AI SDK v5 compatibility
@@ -51,8 +56,8 @@ function validateAndFixToolSchema(tool: any): any {
 }
 
 /**
- * Fetches Composio tools for a user based on their tool preferences or agent configuration
- * Now supports selective tool loading by slug
+ * Fetches Composio tools for a user based on their toolkit preferences or agent configuration
+ * Now supports toolkit-level selection - enables all tools within selected toolkits
  */
 export async function getComposioTools(
   userId: string,
@@ -68,21 +73,37 @@ export async function getComposioTools(
       return {};
     }
 
-    // Get enabled tools based on context (agent vs user)
-    let enabledToolSlugs: string[] = [];
+    // Get enabled toolkits based on context (agent vs user)
+    let enabledToolkitNames: string[] = [];
     
     if (options?.agentId) {
-      // Get agent-specific tools
-      enabledToolSlugs = await getEnabledToolsForAgent(options.agentId);
+      // Get agent-specific toolkits
+      enabledToolkitNames = await getAgentEnabledToolkits(options.agentId);
     } else {
-      // Get user-level tools for general usage
-      enabledToolSlugs = await getEnabledToolsForUser(userId);
+      // Get user-level toolkits for general usage
+      enabledToolkitNames = await getUserEnabledToolkits(userId);
     }
 
-    if (enabledToolSlugs.length === 0) {
-      console.log(`No tools enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`);
+    if (enabledToolkitNames.length === 0) {
+      console.log(`No toolkits enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`);
       return {};
     }
+
+    // Get all tools from enabled toolkits
+    const allTools = await getAvailableTools();
+    const enabledToolSlugs = allTools
+      .filter(tool => 
+        tool.isActive && 
+        enabledToolkitNames.includes(tool.toolkitName)
+      )
+      .map(tool => tool.slug);
+
+    if (enabledToolSlugs.length === 0) {
+      console.log(`No tools found in enabled toolkits: ${enabledToolkitNames.join(', ')}`);
+      return {};
+    }
+
+    console.log(`📦 [Composio] Loading tools from toolkits: ${enabledToolkitNames.join(', ')} (${enabledToolSlugs.length} tools)`);
 
     // Use Composio's native tool filtering by slug
     const firstConnectionId = connectedToolkits[0]?.connectionId;

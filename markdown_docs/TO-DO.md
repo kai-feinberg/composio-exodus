@@ -1,5 +1,7 @@
 # Priorities
 
+limit agent switching modal size (display just top 5 and limit width)
+
 1. enable specific tools (ie twitter bookmarks). May require custom DB table with col for toolkit (ie TWITTER) col for tool name/slug(ie TWITTER_BOOKMARKS_BY_USER) and description. Then can have agents with col linking to specific rows in the tools table. Then when getting the tools in composio.ts we can get the tools by their slug
 2. add more tool kit options (YT, reddit, etc)
 3. configure to give agents access to only specific tools. Dynamic tool loading via a small llm to select what is needed?
