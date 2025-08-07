@@ -16,6 +16,7 @@ import {
 import { fetcher, cn } from '@/lib/utils';
 import type { Agent } from '@/lib/db/schema';
 import { toast } from 'sonner';
+import { ToolkitBadges } from './toolkit-badges';
 
 interface AgentSelectorProps {
   selectedAgentId?: string;
@@ -160,6 +161,15 @@ export function AgentSelector({
                   {agent.description}
                 </div>
               )}
+              <div className="mt-1">
+                <ToolkitBadges 
+                  agentId={agent.id}
+                  maxVisible={4}
+                  variant="outline"
+                  size="sm"
+                  showCount={false}
+                />
+              </div>
             </div>
           </DropdownMenuItem>
         ))}

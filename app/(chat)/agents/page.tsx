@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AgentManagement } from '@/components/agent-management';
+import { ToolkitBadges } from '@/components/toolkit-badges';
 import { chatModels } from '@/lib/ai/models';
 import type { Agent } from '@/lib/db/schema';
 
@@ -199,7 +200,18 @@ export default function AgentsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      Enabled Toolkits
+                    </p>
+                    <ToolkitBadges 
+                      agentId={agent.id}
+                      maxVisible={4}
+                      variant="secondary"
+                      size="sm"
+                    />
+                  </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">
                       Model

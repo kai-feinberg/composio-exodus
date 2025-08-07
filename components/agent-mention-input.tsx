@@ -101,7 +101,7 @@ export const AgentMentionInput = forwardRef<HTMLTextAreaElement, AgentMentionInp
           disabled={disabled}
           autoFocus={autoFocus}
           className={cn(
-            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
+            'min-h-[24px] resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
             className
           )}
           asChild

@@ -383,7 +383,7 @@ const PurePreviewMessage = ({
                 };
 
                 return (
-                  <div key={toolCallId} className="my-4">
+                  <div key={toolCallId} className="my-2">
                     <AITool defaultOpen={shouldOpenByDefault}>
                       <AIToolHeader
                         status={status}
@@ -403,6 +403,7 @@ const PurePreviewMessage = ({
                                 ? String(output.error || output.message || 'Unknown error')
                                 : undefined
                             }
+                            toolName={toolName}
                           />
                         )}
 

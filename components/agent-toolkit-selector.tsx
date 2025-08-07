@@ -151,23 +151,20 @@ export function AgentToolkitSelector({
   }
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-3 w-full">
       <div className="flex items-center justify-between w-full">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Package className="size-5" />
-            Toolkit Configuration
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Package className="size-4" />
+            Toolkit Configuration ({enabledCount} of {totalCount} enabled)
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {enabledCount} of {totalCount} toolkits enabled
-          </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-1 shrink-0">
           <Button
             variant="ghost"
             onClick={handleSelectAll}
             size="sm"
-            className="h-8 px-3 text-sm"
+            className="h-7 px-2 text-xs"
             disabled={enabledCount === totalCount}
           >
             All
@@ -176,43 +173,36 @@ export function AgentToolkitSelector({
             variant="ghost"
             onClick={handleSelectNone}
             size="sm"
-            className="h-8 px-3 text-sm"
+            className="h-7 px-2 text-xs"
             disabled={enabledCount === 0}
           >
             None
           </Button>
         </div>
       </div>
-      <div className="flex items-center space-x-2 mb-4">
-        <Search className="size-4 text-muted-foreground" />
+      <div className="flex items-center space-x-2 mb-3">
+        <Search className="size-3 text-muted-foreground" />
         <Input
           placeholder="Search toolkits..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-9 text-sm flex-1"
+          className="h-7 text-xs flex-1"
         />
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto w-full">
+      <div className="grid grid-cols-2 gap-1.5 max-h-96 overflow-y-auto w-full">
         {filteredToolkits.map((toolkit) => (
           <div
             key={`${toolkit.toolkitSlug}`}
-            className="flex items-center justify-between p-3 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
+            className="flex items-center justify-between py-2 px-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
           >
-            <div className="flex-1 min-w-0 pr-3">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-base truncate flex-1">
-                  {toolkit.toolkitName}
-                </h4>
-                <Badge variant="outline" className="text-sm h-5 px-2 shrink-0">
-                  {toolkit.toolCount}
-                </Badge>
-              </div>
-              {toolkit.description && (
-                <p className="text-sm text-muted-foreground truncate">
-                  {toolkit.description}
-                </p>
-              )}
+            <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+              <h4 className="font-medium text-xs truncate flex-1">
+                {toolkit.toolkitName}
+              </h4>
+              <Badge variant="outline" className="text-xs h-3.5 px-1 shrink-0">
+                {toolkit.toolCount}
+              </Badge>
             </div>
             <Switch
               checked={toolkit.isEnabled}

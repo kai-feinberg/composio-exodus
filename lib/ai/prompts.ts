@@ -50,24 +50,102 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
+// Tool-specific guidance based on available tools/toolkits
+export const getToolSpecificGuidance = (availableTools: string[]): string => {
+  if (availableTools.length === 0) {
+    return '';
+  }
+
+  const toolkits = new Set<string>();
+  const toolGuidance: string[] = [];
+
+  // Extract toolkit names and generate specific guidance
+  availableTools.forEach((toolName) => {
+    const toolkit = toolName.split('_')[0].toLowerCase();
+    toolkits.add(toolkit);
+  });
+
+  // Add toolkit-specific guidance
+  if (toolkits.has('notion')) {
+    toolGuidance.push(`
+**Notion Tool Guidelines:**
+- when creating pages DO NOT use icons '
+- When creating pages, always specify a clear, descriptive title
+- Use proper Notion block types (heading, paragraph, bulleted_list_item, etc.)
+- For page content, structure information hierarchically with headings
+- When adding content to existing pages, check the current structure first using NOTION_FETCH_BLOCK_CONTENTS
+- Always use page_id (not database_id) when adding content to specific pages
+- Content should be properly formatted for Notion's rich text format
+- IMPORTANT: When calling NOTION_ADD_PAGE_CONTENT, ensure the 'content' parameter is an array of block objects, not a single block or plain text
+- Each block should have a 'type' field and a corresponding object with that type name containing the content`);
+  }
+
+  if (toolkits.has('reddit')) {
+    toolGuidance.push(`
+**Reddit Tool Guidelines:**
+- Use specific subreddit names when searching (e.g., "r/programming" not just "programming")
+- Search queries should be descriptive and include relevant keywords
+- When retrieving posts, focus on those with substantial selftext content
+- Respect Reddit's content and be mindful of context when summarizing posts`);
+  }
+
+  if (toolkits.has('youtube')) {
+    toolGuidance.push(`
+**YouTube Tool Guidelines:**
+- Use descriptive search terms that match video titles or topics
+- When getting video details, focus on key information like title, description, stats
+- For captions, specify the correct video ID format
+- Consider video duration and view count when recommending content`);
+  }
+
+  if (toolkits.has('github')) {
+    toolGuidance.push(`
+**GitHub Tool Guidelines:**
+- Use proper repository formats: owner/repo-name
+- When searching code, use specific file extensions and keywords
+- Respect rate limits and API usage guidelines
+- Focus on recent and relevant repositories when possible`);
+  }
+
+  if (toolkits.has('gmail') || toolkits.has('googlemail')) {
+    toolGuidance.push(`
+**Gmail Tool Guidelines:**
+- Be concise and professional in email composition
+- Use clear subject lines that reflect the email content
+- When searching emails, use specific keywords or date ranges
+- Respect privacy and only access information that's explicitly requested`);
+  }
+
+  if (toolGuidance.length === 0) {
+    return '';
+  }
+
+  return `\n\n**Available Tool Guidelines:**\n${toolGuidance.join('\n')}`;
+};
+
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
   agentSystemPrompt,
+  availableTools,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
   agentSystemPrompt?: string;
+  availableTools?: string[];
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
   const basePrompt = agentSystemPrompt || regularPrompt;
+
+  // Generate tool-specific guidance
+  const toolGuidance = getToolSpecificGuidance(availableTools || []);
 
   // Include artifacts prompt for both regular and reasoning models
   // The reasoning model can still use artifacts while leveraging its reasoning capabilities
 
   // removing artifacts prompt for now
   // return `${basePrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  return `${basePrompt}\n\n${requestPrompt}`;
+  return `${basePrompt}\n\n${requestPrompt}${toolGuidance}`;
 };
 
 export const codePrompt = `

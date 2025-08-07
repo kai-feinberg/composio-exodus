@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/toast';
+import { ToolkitBadges } from '@/components/toolkit-badges';
 
 interface PublicAgent {
   id: string;
@@ -123,7 +124,18 @@ export default function BrowseAgentsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      Enabled Toolkits
+                    </p>
+                    <ToolkitBadges 
+                      agentId={agent.id}
+                      maxVisible={4}
+                      variant="secondary"
+                      size="sm"
+                    />
+                  </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">
                       Created

@@ -70,28 +70,45 @@ function PureMultimodalInput({
   const mentionInputRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      adjustHeight();
-    }
-  }, []);
-
-  const adjustHeight = () => {
+  const adjustHeight = useCallback(() => {
     // Try mention input first, then fall back to textarea
     const currentRef = mentionInputRef.current || textareaRef.current;
     if (currentRef) {
+      // Reset to auto to get accurate scrollHeight
       currentRef.style.height = 'auto';
-      currentRef.style.height = `${currentRef.scrollHeight + 2}px`;
+      
+      // Calculate the new height based on content
+      const scrollHeight = currentRef.scrollHeight;
+      const minHeight = 98; // Minimum height in pixels
+      const maxHeight = window.innerHeight * 0.4; // 40% of viewport height
+      
+      // Set height between min and max bounds
+      const newHeight = Math.max(minHeight, Math.min(scrollHeight + 2, maxHeight));
+      currentRef.style.height = `${newHeight}px`;
+      
+      // Add scroll if content exceeds max height
+      if (scrollHeight > maxHeight - 2) {
+        currentRef.style.overflowY = 'auto';
+      } else {
+        currentRef.style.overflowY = 'hidden';
+      }
     }
-  };
+  }, []);
 
-  const resetHeight = () => {
+  const resetHeight = useCallback(() => {
     const currentRef = mentionInputRef.current || textareaRef.current;
     if (currentRef) {
       currentRef.style.height = 'auto';
       currentRef.style.height = '98px';
+      currentRef.style.overflowY = 'hidden';
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      adjustHeight();
+    }
+  }, [adjustHeight]);
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
@@ -115,10 +132,16 @@ function PureMultimodalInput({
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
 
-  const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  // Adjust height when input value changes
+  useEffect(() => {
+    requestAnimationFrame(adjustHeight);
+  }, [input, adjustHeight]);
+
+  const handleInput = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
-    adjustHeight();
-  };
+    // Use requestAnimationFrame to ensure DOM is updated before height calculation
+    requestAnimationFrame(adjustHeight);
+  }, [setInput, adjustHeight]);
 
   const handleAgentSwitch = useCallback((agentId: string, agentName: string) => {
     // Switch to the mentioned agent
@@ -176,6 +199,7 @@ function PureMultimodalInput({
     sendMessage,
     setAttachments,
     setLocalStorageInput,
+    resetHeight,
     width,
     chatId,
     selectedVisibilityType,
@@ -323,7 +347,7 @@ function PureMultimodalInput({
         placeholder="Send a message... (Type @ to mention agents)"
         disabled={status !== 'ready'}
         className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
+          'min-h-[98px] resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
           className,
         )}
         autoFocus

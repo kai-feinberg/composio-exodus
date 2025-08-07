@@ -152,29 +152,22 @@ export function ToolkitSelector({
         />
       </div>
 
-      <div className="space-y-2 max-h-48 overflow-y-auto w-full">
+      <div className="space-y-1 max-h-48 overflow-y-auto w-full">
         {filteredToolkits.map((toolkit) => (
           <div
             key={`${toolkit.toolkitSlug}`}
-            className="flex items-center justify-between p-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
+            className="flex items-center justify-between py-1.5 px-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
           >
-            <div className="flex-1 min-w-0 pr-2">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-sm truncate flex-1">
-                  {toolkit.toolkitName}
-                </h4>
-                <Badge
-                  variant="outline"
-                  className="text-xs h-4 px-1 shrink-0"
-                >
-                  {toolkit.toolCount}
-                </Badge>
-              </div>
-              {toolkit.description && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {toolkit.description}
-                </p>
-              )}
+            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+              <h4 className="font-medium text-sm truncate flex-1">
+                {toolkit.toolkitName}
+              </h4>
+              <Badge
+                variant="outline"
+                className="text-xs h-4 px-1 shrink-0"
+              >
+                {toolkit.toolCount}
+              </Badge>
             </div>
             <Switch
               checked={toolkit.isEnabled}

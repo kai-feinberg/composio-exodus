@@ -306,10 +306,23 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
+        // Fetch user's connected toolkits and Composio tools
+        let composioTools = {};
+        try {
+          console.log(`🔄 Loading Composio tools for user: ${session.user.id}${selectedAgentId ? `, agent: ${selectedAgentId}` : ''}`);
+          composioTools = await getComposioTools(session.user.id, { agentId: selectedAgentId });
+          const toolNames = Object.keys(composioTools);
+          console.log(`✅ Loaded ${toolNames.length} tools:`, toolNames.slice(0, 5));
+        } catch (error) {
+          console.error('❌ Failed to load Composio tools:', error);
+          // Continue without Composio tools if this fails
+        }
+
         const finalSystemPrompt = systemPrompt({
           selectedChatModel: effectiveChatModel,
           requestHints,
           agentSystemPrompt,
+          availableTools: Object.keys(composioTools),
         });
 
         console.log('📝 Final system prompt configuration:', {
@@ -326,19 +339,8 @@ export async function POST(request: Request) {
             : 'none',
           finalPromptLength: finalSystemPrompt.length,
           finalPromptPreview: `${finalSystemPrompt.slice(0, 200)}...`,
+          availableToolsCount: Object.keys(composioTools).length,
         });
-
-        // Fetch user's connected toolkits and Composio tools
-        let composioTools = {};
-        try {
-          console.log(`🔄 Loading Composio tools for user: ${session.user.id}${selectedAgentId ? `, agent: ${selectedAgentId}` : ''}`);
-          composioTools = await getComposioTools(session.user.id, { agentId: selectedAgentId });
-          const toolNames = Object.keys(composioTools);
-          console.log(`✅ Loaded ${toolNames.length} tools:`, toolNames.slice(0, 5));
-        } catch (error) {
-          console.error('❌ Failed to load Composio tools:', error);
-          // Continue without Composio tools if this fails
-        }
 
         // Wrap Composio tools with logging
         const loggedComposioTools: Record<string, any> = {};
