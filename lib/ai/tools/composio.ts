@@ -1,11 +1,12 @@
 import composio, { getConnectedToolkits } from '@/lib/services/composio';
 import { sanitizeToolResult } from './result-sanitizer';
-import { 
-  getEnabledToolsForUser, 
-  getAgentEnabledToolkits, 
+import {
+  getEnabledToolsForUser,
+  getAgentEnabledToolkits,
   getUserEnabledToolkits,
   getAvailableTools,
 } from '@/lib/db/queries';
+import { parseComposioResponse } from './composio-response-parser';
 
 /**
  * Validates and fixes tool schema to ensure AI SDK v5 compatibility
@@ -64,7 +65,7 @@ export async function getComposioTools(
   options?: {
     agentId?: string;
     requestedToolkits?: string[];
-  }
+  },
 ) {
   try {
     // Get connected toolkits first
@@ -75,7 +76,7 @@ export async function getComposioTools(
 
     // Get enabled toolkits based on context (agent vs user)
     let enabledToolkitNames: string[] = [];
-    
+
     if (options?.agentId) {
       // Get agent-specific toolkits
       enabledToolkitNames = await getAgentEnabledToolkits(options.agentId);
@@ -85,32 +86,49 @@ export async function getComposioTools(
     }
 
     if (enabledToolkitNames.length === 0) {
-      console.log(`No toolkits enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`);
+      console.log(
+        `No toolkits enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`,
+      );
       return {};
     }
 
     // Get all tools from enabled toolkits
     const allTools = await getAvailableTools();
     const enabledToolSlugs = allTools
-      .filter(tool => 
-        tool.isActive && 
-        enabledToolkitNames.includes(tool.toolkitName)
+      .filter(
+        (tool) =>
+          tool.isActive && enabledToolkitNames.includes(tool.toolkitName),
       )
-      .map(tool => tool.slug);
+      .map((tool) => tool.slug);
 
     if (enabledToolSlugs.length === 0) {
-      console.log(`No tools found in enabled toolkits: ${enabledToolkitNames.join(', ')}`);
+      console.log(
+        `No tools found in enabled toolkits: ${enabledToolkitNames.join(', ')}`,
+      );
       return {};
     }
 
-    console.log(`📦 [Composio] Loading tools from toolkits: ${enabledToolkitNames.join(', ')} (${enabledToolSlugs.length} tools)`);
+    console.log(
+      `📦 [Composio] Loading tools from toolkits: ${enabledToolkitNames.join(', ')} (${enabledToolSlugs.length} tools)`,
+    );
 
     // Use Composio's native tool filtering by slug
     const firstConnectionId = connectedToolkits[0]?.connectionId;
-    const rawTools = await composio.tools.get(userId, {
-      tools: enabledToolSlugs, // Filter by specific tool slugs
-      ...(firstConnectionId && { connectedAccountId: firstConnectionId }),
-    });
+    const rawTools = await composio.tools.get(
+      userId,
+      {
+        tools: enabledToolSlugs, // Filter by specific tool slugs
+        ...(firstConnectionId && { connectedAccountId: firstConnectionId }),
+      },
+      {
+        afterExecute: ({
+          toolSlug,
+          toolkitSlug,
+          result,
+        }: { toolSlug: string; toolkitSlug: string; result: any }) =>
+          parseComposioResponse(toolSlug, toolkitSlug, result),
+      }
+    );
 
     // Filter out tools from disconnected toolkits
     const toolkitConnectionMap: Record<string, string> = {};
@@ -120,25 +138,28 @@ export async function getComposioTools(
 
     // Validate and fix each tool schema
     const validatedTools: Record<string, any> = {};
-    
+
     for (const [toolName, tool] of Object.entries(rawTools)) {
       const validatedTool = validateAndFixToolSchema(tool);
       if (validatedTool) {
         const toolkitName = toolName.split('_')[0];
         const connectionId = toolkitConnectionMap[toolkitName];
-        
+
         if (connectionId) {
           validatedTool.connectedAccountId = connectionId;
           validatedTools[toolName] = validatedTool;
         } else {
-          console.warn(`Tool ${toolName} skipped - toolkit ${toolkitName} not connected`);
+          console.warn(
+            `Tool ${toolName} skipped - toolkit ${toolkitName} not connected`,
+          );
         }
       }
     }
 
-    console.log(`📦 [Composio] Successfully loaded ${Object.keys(validatedTools).length} tools`);
+    console.log(
+      `📦 [Composio] Successfully loaded ${Object.keys(validatedTools).length} tools`,
+    );
     return validatedTools;
-
   } catch (error) {
     console.error('❌ [Composio] Failed to fetch tools:', error);
     return {};

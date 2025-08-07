@@ -1,10 +1,11 @@
 # Priorities
 
-tool switching in new tab
-
 - tool return parsing
+- remove sanitization. But truncate fields after 150 characters. copy button in json return of tool result (then just pass into ai to write json to extract the best fields)
 
-only add as connection if it goes through
+youtube channel content transcript tool?
+transcriber tool (give link to instagram, YT, or etc) and it will transcribe the video
+link to n8n workflows
 
 limit agent switching modal size (display just top 5 and limit width)
 

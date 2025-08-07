@@ -7,8 +7,8 @@
  */
 
 const MAX_STRING_LENGTH = 2000; // Maximum characters for any string field
-const MAX_ARRAY_ITEMS = 10; // Maximum items in arrays
-const MAX_OBJECT_DEPTH = 5; // Maximum nesting depth
+const MAX_ARRAY_ITEMS = 100; // Maximum items in arrays
+const MAX_OBJECT_DEPTH = 20; // Maximum nesting depth
 
 /**
  * Patterns to identify and handle large content fields
