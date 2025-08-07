@@ -21,7 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { AgentToolkitSelector } from './agent-toolkit-selector';
+import { ToolkitSelector } from './toolkit-selector';
 import type { Agent } from '@/lib/db/schema';
 import { toast } from 'sonner';
 import { chatModels } from '@/lib/ai/models';
@@ -78,6 +80,9 @@ export function AgentManagement({
   const [fileUploadState, setFileUploadState] = useState<FileUploadState>(
     initialFileUploadState,
   );
+  const [activeTab, setActiveTab] = useState('details');
+  const [createdAgent, setCreatedAgent] = useState<Agent | null>(null);
+  const [selectedToolkits, setSelectedToolkits] = useState<string[]>([]);
 
   // Reset form when dialog opens/closes or editing agent changes
   useEffect(() => {
@@ -91,9 +96,12 @@ export function AgentManagement({
         });
       } else {
         setFormData(initialFormData);
+        setCreatedAgent(null);
+        setSelectedToolkits([]);
       }
       setUseFileUpload(false);
       setFileUploadState(initialFileUploadState);
+      setActiveTab('details');
     }
   }, [isOpen, editingAgent]);
 
@@ -132,11 +140,49 @@ export function AgentManagement({
         );
       }
 
+      const result = await response.json();
+
       toast.success(
         `Agent ${editingAgent ? 'updated' : 'created'} successfully`,
       );
 
-      onClose();
+      // If creating a new agent, apply toolkit configuration and switch to toolkit tab
+      if (!editingAgent && result.agent) {
+        setCreatedAgent(result.agent);
+
+        // Apply selected toolkits if any were selected
+        if (selectedToolkits.length > 0) {
+          try {
+            const toolkitResponse = await fetch(
+              `/api/tools/agent/${result.agent.id}/toolkits/copy`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  enabledToolkits: selectedToolkits,
+                }),
+              },
+            );
+
+            if (!toolkitResponse.ok) {
+              throw new Error('Failed to apply toolkit configuration');
+            }
+
+            toast.success(
+              `Applied ${selectedToolkits.length} toolkit(s) to agent`,
+            );
+          } catch (error) {
+            console.error('Failed to apply toolkit configuration:', error);
+            toast.error(
+              'Agent created but failed to apply toolkit configuration',
+            );
+          }
+        }
+
+        setActiveTab('toolkits');
+      } else {
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving agent:', error);
       toast.error(`Failed to ${editingAgent ? 'update' : 'create'} agent`);
@@ -214,8 +260,10 @@ export function AgentManagement({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col"
-        style={{ maxHeight: 'calc(100vh - 2rem)' }}>
+      <DialogContent
+        className="sm:max-w-2xl max-h-[98vh] min-h-[600px] flex flex-col"
+        style={{ maxHeight: 'calc(100vh - 0.5rem)' }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot size={20} />
@@ -227,108 +275,153 @@ export function AgentManagement({
               : 'Create a new AI agent with custom instructions. You can upload .docx files for system prompts!'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="Enter agent name"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Enter agent description (optional)"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="modelId">Model</Label>
-            <Select
-              value={formData.modelId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, modelId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {chatModels.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div>
-                      <div className="font-medium">{model.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {model.description}
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="systemPrompt">System Prompt *</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={toggleInputMode}
-                className="h-8 px-2 text-xs"
-              >
-                {useFileUpload ? (
-                  <>
-                    <ToggleRight className="size-4 mr-1" />
-                    File Upload
-                  </>
-                ) : (
-                  <>
-                    <ToggleLeft className="size-4 mr-1" />
-                    Manual Input
-                  </>
-                )}
-              </Button>
-            </div>
 
-            {useFileUpload ? (
-              <div className="space-y-3">
-                <FileDropzone
-                  onFileSelect={handleFileSelect}
-                  onFileRemove={handleFileRemove}
-                  selectedFile={fileUploadState.selectedFile}
-                  isProcessing={fileUploadState.isUploading}
-                  error={fileUploadState.error}
-                  success={
-                    fileUploadState.processingResult
-                      ? `Extracted ${fileUploadState.processingResult.characterCount} characters, ${fileUploadState.processingResult.wordCount} words`
-                      : undefined
-                  }
-                />
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Agent Details</TabsTrigger>
+            <TabsTrigger value="toolkits">Toolkit Configuration</TabsTrigger>
+          </TabsList>
 
-                {fileUploadState.extractedText && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm text-muted-foreground">
-                        Extracted Content Preview
-                      </Label>
-                      <div className="text-xs text-muted-foreground">
-                        {fileUploadState.processingResult?.characterCount}{' '}
-                        chars, {fileUploadState.processingResult?.wordCount}{' '}
-                        words
-                      </div>
+          <TabsContent value="details" className="flex-1 flex flex-col">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Enter agent name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Enter agent description (optional)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="modelId">Model</Label>
+                  <Select
+                    value={formData.modelId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, modelId: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {chatModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div>
+                            <div className="font-medium">{model.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {model.description}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="systemPrompt">System Prompt *</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleInputMode}
+                      className="h-8 px-2 text-xs"
+                    >
+                      {useFileUpload ? (
+                        <>
+                          <ToggleRight className="size-4 mr-1" />
+                          File Upload
+                        </>
+                      ) : (
+                        <>
+                          <ToggleLeft className="size-4 mr-1" />
+                          Manual Input
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {useFileUpload ? (
+                    <div className="space-y-3">
+                      <FileDropzone
+                        onFileSelect={handleFileSelect}
+                        onFileRemove={handleFileRemove}
+                        selectedFile={fileUploadState.selectedFile}
+                        isProcessing={fileUploadState.isUploading}
+                        error={fileUploadState.error}
+                        success={
+                          fileUploadState.processingResult
+                            ? `Extracted ${fileUploadState.processingResult.characterCount} characters, ${fileUploadState.processingResult.wordCount} words`
+                            : undefined
+                        }
+                      />
+
+                      {fileUploadState.extractedText && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm text-muted-foreground">
+                              Extracted Content Preview
+                            </Label>
+                            <div className="text-xs text-muted-foreground">
+                              {fileUploadState.processingResult?.characterCount}{' '}
+                              chars,{' '}
+                              {fileUploadState.processingResult?.wordCount}{' '}
+                              words
+                            </div>
+                          </div>
+                          <Textarea
+                            value={formData.systemPrompt}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                systemPrompt: e.target.value,
+                              })
+                            }
+                            placeholder="Extracted text will appear here..."
+                            rows={4}
+                            className="font-mono text-sm"
+                            required
+                          />
+                          {fileUploadState.processingResult?.warnings &&
+                            fileUploadState.processingResult.warnings.length >
+                              0 && (
+                              <div className="text-xs text-amber-600">
+                                <strong>Processing warnings:</strong>
+                                <ul className="list-disc list-inside mt-1">
+                                  {fileUploadState.processingResult.warnings.map(
+                                    (warning) => (
+                                      <li key={warning}>{warning}</li>
+                                    ),
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                        </div>
+                      )}
                     </div>
+                  ) : (
                     <Textarea
+                      id="systemPrompt"
                       value={formData.systemPrompt}
                       onChange={(e) =>
                         setFormData({
@@ -336,77 +429,84 @@ export function AgentManagement({
                           systemPrompt: e.target.value,
                         })
                       }
-                      placeholder="Extracted text will appear here..."
+                      placeholder="Enter the system prompt that defines the agent's behavior..."
                       rows={4}
-                      className="font-mono text-sm"
                       required
                     />
-                    {fileUploadState.processingResult?.warnings &&
-                      fileUploadState.processingResult.warnings.length > 0 && (
-                        <div className="text-xs text-amber-600">
-                          <strong>Processing warnings:</strong>
-                          <ul className="list-disc list-inside mt-1">
-                            {fileUploadState.processingResult.warnings.map(
-                              (warning) => (
-                                <li key={warning}>{warning}</li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            ) : (
-              <Textarea
-                id="systemPrompt"
-                value={formData.systemPrompt}
-                onChange={(e) =>
-                  setFormData({ ...formData, systemPrompt: e.target.value })
-                }
-                placeholder="Enter the system prompt that defines the agent's behavior..."
-                rows={4}
-                required
-              />
-            )}
-          </div>
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  <X className="size-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  <Save className="size-4 mr-2" />
+                  {isSubmitting
+                    ? 'Saving...'
+                    : editingAgent
+                      ? 'Update Agent'
+                      : 'Create Agent'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
 
-          {/* Toolkit Configuration Section */}
-          {editingAgent && (
-            <div className="space-y-2">
-              <AgentToolkitSelector
-                agentId={editingAgent.id}
-                agentName={editingAgent.name}
-                onConfigurationChange={() => {
-                  // Optional: Add any refresh logic if needed
-                }}
-              />
+          <TabsContent value="toolkits" className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto pr-2 min-h-[500px]">
+              {editingAgent ? (
+                // For existing agents, use the existing agent toolkit selector
+                <AgentToolkitSelector
+                  agentId={editingAgent.id}
+                  agentName={editingAgent.name}
+                  onConfigurationChange={() => {
+                    // Optional: Add any refresh logic if needed
+                  }}
+                />
+              ) : createdAgent ? (
+                // For just-created agents, use the agent toolkit selector
+                <AgentToolkitSelector
+                  agentId={createdAgent.id}
+                  agentName={createdAgent.name}
+                  onConfigurationChange={() => {
+                    // Optional: Add any refresh logic if needed
+                  }}
+                />
+              ) : (
+                // For new agents before creation, use the generic toolkit selector
+                <div className="space-y-4">
+                  <div className="text-base text-muted-foreground mb-4">
+                    Select toolkits to enable when the agent is created. You can
+                    modify these settings later.
+                  </div>
+                  <ToolkitSelector
+                    selectedToolkits={selectedToolkits}
+                    onSelectionChange={setSelectedToolkits}
+                  />
+                </div>
+              )}
             </div>
-          )}
-          {!editingAgent && (
-            <div className="rounded-lg border border-dashed p-4 text-center text-muted-foreground">
-              <p className="text-sm">
-                Toolkit configuration will be available after creating the
-                agent.
-              </p>
-            </div>
-          )}
-          </div>
-          <DialogFooter className="shrink-0 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              <X className="size-4 mr-2" />
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              <Save className="size-4 mr-2" />
-              {isSubmitting
-                ? 'Saving...'
-                : editingAgent
-                  ? 'Update Agent'
-                  : 'Create Agent'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="shrink-0 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                <X className="size-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                onClick={handleSubmit}
+              >
+                <Save className="size-4 mr-2" />
+                {isSubmitting
+                  ? 'Saving...'
+                  : editingAgent
+                    ? 'Update Agent'
+                    : 'Create Agent'}
+              </Button>
+            </DialogFooter>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

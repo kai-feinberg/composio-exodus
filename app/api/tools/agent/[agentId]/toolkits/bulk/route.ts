@@ -17,7 +17,9 @@ export async function POST(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { agentId } = await params;
     const { enabled } = await request.json();
 
     if (typeof enabled !== 'boolean') {

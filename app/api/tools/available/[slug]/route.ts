@@ -16,7 +16,9 @@ export async function PUT(
     // TODO: Add admin check when admin roles are implemented
 
     const { displayName, description, isActive } = await request.json();
-    const { slug } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { slug } = await params;
 
     const updatedTool = await updateAvailableTool(slug, {
       displayName,
@@ -47,7 +49,9 @@ export async function DELETE(
 
     // TODO: Add admin check when admin roles are implemented
 
-    const { slug } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { slug } = await params;
     const deletedTool = await deleteAvailableTool(slug);
 
     if (!deletedTool) {

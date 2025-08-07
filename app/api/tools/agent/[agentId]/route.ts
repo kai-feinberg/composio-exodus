@@ -18,7 +18,9 @@ export async function GET(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { agentId } = await params;
 
     // Verify agent ownership or global access
     const agent = await getAgentById({ id: agentId });
@@ -57,7 +59,9 @@ export async function POST(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { agentId } = await params;
     const { toolSlug, enabled } = await request.json();
 
     if (!toolSlug || typeof enabled !== 'boolean') {
@@ -93,7 +97,9 @@ export async function PUT(
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const { agentId } = params;
+    // Next.js 15 requires awaiting params before accessing properties
+    // This is against typical best practices but required for proper function
+    const { agentId } = await params;
     const { tools } = await request.json();
 
     if (!Array.isArray(tools)) {

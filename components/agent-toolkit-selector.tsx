@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Loader2, Search, Copy, Package } from 'lucide-react';
+import { Loader2, Search, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
@@ -128,48 +128,6 @@ export function AgentToolkitSelector({
     }
   };
 
-  const copyFromUserDefaults = async () => {
-    try {
-      // First fetch user toolkit preferences
-      const userResponse = await fetch('/api/tools/user/toolkits');
-      if (!userResponse.ok) throw new Error('Failed to fetch user toolkits');
-
-      const userData = await userResponse.json();
-      const enabledUserToolkits = userData.toolkits.filter(
-        (toolkit: Toolkit) => toolkit.isEnabled,
-      );
-
-      if (enabledUserToolkits.length === 0) {
-        toast.info('No user toolkits enabled to copy');
-        return;
-      }
-
-      // Apply user preferences to agent
-      const response = await fetch(
-        `/api/tools/agent/${agentId}/toolkits/copy`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            enabledToolkits: enabledUserToolkits.map(
-              (t: Toolkit) => t.toolkitName,
-            ),
-          }),
-        },
-      );
-
-      if (!response.ok) throw new Error('Failed to copy user toolkits');
-
-      // Refresh agent toolkits
-      await fetchAgentToolkits();
-      toast.success('Copied enabled toolkits from user defaults');
-      onConfigurationChange?.();
-    } catch (error) {
-      console.error('Failed to copy user toolkits:', error);
-      toast.error('Failed to copy user toolkit preferences');
-    }
-  };
-
   // Filter toolkits based on search
   const filteredToolkits = toolkits.filter((toolkit) => {
     const searchLower = searchQuery.toLowerCase();
@@ -193,32 +151,23 @@ export function AgentToolkitSelector({
   }
 
   return (
-    <div className="space-y-3 w-full">
+    <div className="space-y-4 w-full">
       <div className="flex items-center justify-between w-full">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <Package className="size-4" />
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Package className="size-5" />
             Toolkit Configuration
           </h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {enabledCount} of {totalCount} toolkits enabled
           </p>
         </div>
-        <div className="flex gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            onClick={copyFromUserDefaults}
-            size="sm"
-            className="h-7 px-2 text-xs"
-          >
-            <Copy className="size-3 mr-1" />
-            Copy
-          </Button>
+        <div className="flex gap-2 shrink-0">
           <Button
             variant="ghost"
             onClick={handleSelectAll}
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-8 px-3 text-sm"
             disabled={enabledCount === totalCount}
           >
             All
@@ -227,43 +176,40 @@ export function AgentToolkitSelector({
             variant="ghost"
             onClick={handleSelectNone}
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-8 px-3 text-sm"
             disabled={enabledCount === 0}
           >
             None
           </Button>
         </div>
       </div>
-      <div className="flex items-center space-x-2 mb-3">
-        <Search className="size-3 text-muted-foreground" />
+      <div className="flex items-center space-x-2 mb-4">
+        <Search className="size-4 text-muted-foreground" />
         <Input
           placeholder="Search toolkits..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-7 text-xs flex-1"
+          className="h-9 text-sm flex-1"
         />
       </div>
 
-      <div className="space-y-2 max-h-48 overflow-y-auto w-full">
+      <div className="space-y-3 max-h-96 overflow-y-auto w-full">
         {filteredToolkits.map((toolkit) => (
           <div
             key={`${toolkit.toolkitSlug}`}
-            className="flex items-center justify-between p-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
+            className="flex items-center justify-between p-3 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
           >
-            <div className="flex-1 min-w-0 pr-2">
+            <div className="flex-1 min-w-0 pr-3">
               <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-sm truncate flex-1">
+                <h4 className="font-medium text-base truncate flex-1">
                   {toolkit.toolkitName}
                 </h4>
-                <Badge
-                  variant="outline"
-                  className="text-xs h-4 px-1 shrink-0"
-                >
+                <Badge variant="outline" className="text-sm h-5 px-2 shrink-0">
                   {toolkit.toolCount}
                 </Badge>
               </div>
               {toolkit.description && (
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   {toolkit.description}
                 </p>
               )}
@@ -273,14 +219,14 @@ export function AgentToolkitSelector({
               onCheckedChange={(checked) =>
                 handleToolkitToggle(toolkit.toolkitName, checked)
               }
-              className="shrink-0 scale-75"
+              className="shrink-0"
             />
           </div>
         ))}
       </div>
 
       {filteredToolkits.length === 0 && (
-        <div className="text-center py-4 text-muted-foreground text-xs w-full">
+        <div className="text-center py-6 text-muted-foreground text-sm w-full">
           {searchQuery
             ? 'No toolkits match your search query.'
             : 'No toolkits available.'}

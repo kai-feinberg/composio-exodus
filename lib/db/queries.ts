@@ -892,9 +892,9 @@ export async function getAvailableToolkits(): Promise<
       .orderBy(availableTools.toolkitName);
 
     // Convert null to undefined for TypeScript compatibility
-    return toolkits.map(toolkit => ({
+    return toolkits.map((toolkit) => ({
       ...toolkit,
-      description: toolkit.description || undefined
+      description: toolkit.description || undefined,
     }));
   } catch (error) {
     throw new ChatSDKError(
@@ -989,7 +989,9 @@ export async function setAgentToolkitEnabled(
   }
 }
 
-export async function getUserEnabledToolkits(userId: string): Promise<string[]> {
+export async function getUserEnabledToolkits(
+  userId: string,
+): Promise<string[]> {
   try {
     // Get all available toolkits
     const availableToolkitData = await db
@@ -1001,7 +1003,7 @@ export async function getUserEnabledToolkits(userId: string): Promise<string[]> 
       .where(eq(availableTools.isActive, true))
       .groupBy(availableTools.toolkitName);
 
-    // Get enabled tools for the user  
+    // Get enabled tools for the user
     const enabledTools = await db
       .select({
         toolkitName: availableTools.toolkitName,
@@ -1009,17 +1011,16 @@ export async function getUserEnabledToolkits(userId: string): Promise<string[]> 
       })
       .from(userTools)
       .innerJoin(availableTools, eq(userTools.toolSlug, availableTools.slug))
-      .where(and(
-        eq(userTools.userId, userId),
-        eq(userTools.isEnabled, true)
-      ))
+      .where(and(eq(userTools.userId, userId), eq(userTools.isEnabled, true)))
       .groupBy(availableTools.toolkitName);
 
     // Find toolkits where all tools are enabled
     const fullyEnabledToolkits: string[] = [];
-    
+
     for (const available of availableToolkitData) {
-      const enabled = enabledTools.find(e => e.toolkitName === available.toolkitName);
+      const enabled = enabledTools.find(
+        (e) => e.toolkitName === available.toolkitName,
+      );
       if (enabled && enabled.enabledCount === available.toolCount) {
         fullyEnabledToolkits.push(available.toolkitName);
       }
