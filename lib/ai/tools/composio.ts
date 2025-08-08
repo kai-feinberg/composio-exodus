@@ -1,7 +1,9 @@
 import composio, { getConnectedToolkits } from '@/lib/services/composio';
+import { auth as appAuth } from '@/lib/auth';
 import { sanitizeToolResult } from './result-sanitizer';
 import {
   getEnabledToolsForUser,
+  getEnabledToolsForAgent,
   getAgentEnabledToolkits,
   getUserEnabledToolkits,
   getAvailableTools,
@@ -68,91 +70,156 @@ export async function getComposioTools(
   },
 ) {
   try {
-    // Get connected toolkits first
-    const connectedToolkits = await getConnectedToolkits(userId);
-    if (connectedToolkits.length === 0) {
-      return {};
-    }
+    // Resolve the effective Clerk user ID using the app's Clerk wrapper
+    const session = await appAuth();
+    const clerkUserIdFromAuth = session?.user?.id;
+    const effectiveUserId = clerkUserIdFromAuth || userId;
 
-    // Get enabled toolkits based on context (agent vs user)
-    let enabledToolkitNames: string[] = [];
-
-    if (options?.agentId) {
-      // Get agent-specific toolkits
-      enabledToolkitNames = await getAgentEnabledToolkits(options.agentId);
-    } else {
-      // Get user-level toolkits for general usage
-      enabledToolkitNames = await getUserEnabledToolkits(userId);
-    }
-
-    if (enabledToolkitNames.length === 0) {
-      console.log(
-        `No toolkits enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`,
+    if (!effectiveUserId) {
+      console.error(
+        '❌ [Composio] No Clerk user ID available for tool loading',
       );
       return {};
     }
 
-    // Get all tools from enabled toolkits
-    const allTools = await getAvailableTools();
-    const enabledToolSlugs = allTools
-      .filter(
-        (tool) =>
-          tool.isActive && enabledToolkitNames.includes(tool.toolkitName),
-      )
-      .map((tool) => tool.slug);
+    if (clerkUserIdFromAuth && clerkUserIdFromAuth !== userId) {
+      console.log(
+        `🔑 [DEBUG] Overriding provided userId with Clerk userId from auth(): ${clerkUserIdFromAuth}`,
+      );
+    }
+
+    // Get connected toolkits first
+    const connectedToolkits = await getConnectedToolkits(effectiveUserId);
+    if (connectedToolkits.length === 0) {
+      return {};
+    }
+
+    // Get enabled tool slugs based on context (agent vs user)
+    let enabledToolSlugs: string[] = [];
+
+    if (options?.agentId) {
+      // Get agent-specific enabled tool slugs
+      enabledToolSlugs = await getEnabledToolsForAgent(options.agentId);
+    } else {
+      // Get user-level enabled tool slugs
+      enabledToolSlugs = await getEnabledToolsForUser(userId);
+    }
 
     if (enabledToolSlugs.length === 0) {
       console.log(
-        `No tools found in enabled toolkits: ${enabledToolkitNames.join(', ')}`,
+        `No tools enabled for ${options?.agentId ? `agent ${options.agentId}` : `user ${userId}`}`,
       );
       return {};
     }
 
     console.log(
-      `📦 [Composio] Loading tools from toolkits: ${enabledToolkitNames.join(', ')} (${enabledToolSlugs.length} tools)`,
+      `🔍 [DEBUG] Enabled tool slugs from DB: ${enabledToolSlugs.join(', ')}`,
     );
 
-    // Use Composio's native tool filtering by slug
-    const firstConnectionId = connectedToolkits[0]?.connectionId;
-    const rawTools = await composio.tools.get(
-      userId,
-      {
-        tools: enabledToolSlugs, // Filter by specific tool slugs
-        ...(firstConnectionId && { connectedAccountId: firstConnectionId }),
-      },
-      {
-        afterExecute: ({
-          toolSlug,
-          toolkitSlug,
-          result,
-        }: { toolSlug: string; toolkitSlug: string; result: any }) =>
-          parseComposioResponse(toolSlug, toolkitSlug, result),
-      }
+    console.log(
+      `📦 [Composio] Loading specific tools: ${enabledToolSlugs.join(', ')}`,
     );
 
-    // Filter out tools from disconnected toolkits
-    const toolkitConnectionMap: Record<string, string> = {};
-    connectedToolkits.forEach((tk: any) => {
-      toolkitConnectionMap[tk.toolkit] = tk.connectionId;
+    // Use specific tool slugs instead of toolkit-based filtering
+    const toolsGetParams = {
+      tools: enabledToolSlugs, // Request specific tools that are enabled
+    };
+    console.log(`🔍 [DEBUG] composio.tools.get() parameters:`, toolsGetParams);
+
+    const rawTools = await composio.tools.get(effectiveUserId, toolsGetParams, {
+      afterExecute: ({
+        toolSlug,
+        toolkitSlug,
+        result,
+      }: { toolSlug: string; toolkitSlug: string; result: any }) =>
+        parseComposioResponse(toolSlug, toolkitSlug, result),
     });
 
-    // Validate and fix each tool schema
+    console.log(`🔍 [DEBUG] Raw tools returned from composio.tools.get():`, {
+      toolCount: Object.keys(rawTools).length,
+      toolNames: Object.keys(rawTools),
+    });
+
+    // Build connection map for adding connection IDs to tools
+    const toolkitConnectionMap: Record<string, string> = {};
+    const toolkitUserIdMap: Record<string, string> = {};
+    connectedToolkits.forEach((tk: any) => {
+      toolkitConnectionMap[tk.toolkit] = tk.connectionId;
+      if (tk.userId) {
+        toolkitUserIdMap[tk.toolkit] = tk.userId;
+      }
+    });
+    console.log(`🔍 [DEBUG] Toolkit connection map:`, toolkitConnectionMap);
+    console.log(`🔍 [DEBUG] Toolkit userId map:`, toolkitUserIdMap);
+
+    // Validate and fix each tool schema (Composio has already filtered to connected tools)
     const validatedTools: Record<string, any> = {};
+
+    console.log(
+      `🔍 [DEBUG] Starting tool validation for ${Object.keys(rawTools).length} tools`,
+    );
 
     for (const [toolName, tool] of Object.entries(rawTools)) {
       const validatedTool = validateAndFixToolSchema(tool);
       if (validatedTool) {
         const toolkitName = toolName.split('_')[0];
         const connectionId = toolkitConnectionMap[toolkitName];
+        const clerkUserId = toolkitUserIdMap[toolkitName];
 
-        if (connectionId) {
-          validatedTool.connectedAccountId = connectionId;
+        console.log(
+          `🔍 [DEBUG] Processing tool ${toolName}: toolkitName=${toolkitName}, connectionId=${connectionId}, clerkUserId=${clerkUserId}`,
+        );
+
+        // Use Clerk user ID if available (as it appears in dashboard), otherwise fall back to connection ID
+        const accountId = clerkUserId || connectionId;
+
+        if (accountId) {
+          // Attach the account ID for execution
+          validatedTool.connectedAccountId = accountId;
           validatedTools[toolName] = validatedTool;
-        } else {
-          console.warn(
-            `Tool ${toolName} skipped - toolkit ${toolkitName} not connected`,
+          console.log(
+            `✅ [DEBUG] Tool ${toolName} included with accountId=${accountId} (${clerkUserId ? 'using clerkUserId' : 'using connectionId'})`,
           );
+        } else {
+          // Tool was returned by Composio but we don't have connection mapping
+          // This might happen with API key connections that have different naming
+          console.warn(
+            `⚠️ [DEBUG] Tool ${toolName} returned by Composio but no connection ID found`,
+          );
+          console.log(
+            `🔍 [DEBUG] Available connection map keys:`,
+            Object.keys(toolkitConnectionMap),
+          );
+          console.log(
+            `🔍 [DEBUG] Trying to find connection for toolkit: ${toolkitName}`,
+          );
+
+          // Try to find connection by partial match or case-insensitive match
+          const connectionKey = Object.keys(toolkitConnectionMap).find(
+            (key) => key.toLowerCase() === toolkitName.toLowerCase(),
+          );
+
+          if (connectionKey) {
+            const fallbackConnectionId = toolkitConnectionMap[connectionKey];
+            const fallbackClerkUserId = toolkitUserIdMap[connectionKey];
+            const fallbackAccountId =
+              fallbackClerkUserId || fallbackConnectionId;
+
+            console.log(
+              `✅ [DEBUG] Found connection via fallback: ${connectionKey} -> ${fallbackAccountId} (${fallbackClerkUserId ? 'using clerkUserId' : 'using connectionId'})`,
+            );
+            validatedTool.connectedAccountId = fallbackAccountId;
+            validatedTools[toolName] = validatedTool;
+          } else {
+            // Include tool anyway since Composio returned it (it must be connected)
+            console.log(
+              `⚠️ [DEBUG] Including tool ${toolName} without explicit connection ID (Composio filtered it as available)`,
+            );
+            validatedTools[toolName] = validatedTool;
+          }
         }
+      } else {
+        console.warn(`❌ Tool ${toolName} failed schema validation`);
       }
     }
 

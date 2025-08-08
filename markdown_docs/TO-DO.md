@@ -2,6 +2,8 @@
 
 loading toolkits with api keys
 
+- apify connection?
+
 youtube channel content transcript tool?
 serp api tool
 apify mcp or tool? https://docs.composio.dev/toolkits/apify
