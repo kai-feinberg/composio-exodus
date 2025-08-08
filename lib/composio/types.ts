@@ -24,6 +24,7 @@ export interface Toolkit {
   categories: string[];
   logo?: string;
   auth_schemes: string[];
+  auth_type?: 'oauth' | 'api_key';
   meta: {
     actionsCount: number;
     triggersCount: number;

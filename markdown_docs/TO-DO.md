@@ -1,16 +1,16 @@
 # Priorities
 
-- tool return parsing
-- remove sanitization. But truncate fields after 150 characters. copy button in json return of tool result (then just pass into ai to write json to extract the best fields)
+loading toolkits with api keys
 
 youtube channel content transcript tool?
+serp api tool
+apify mcp or tool? https://docs.composio.dev/toolkits/apify
+
 transcriber tool (give link to instagram, YT, or etc) and it will transcribe the video
 link to n8n workflows
 
 limit agent switching modal size (display just top 5 and limit width)
 
-1. enable specific tools (ie twitter bookmarks). May require custom DB table with col for toolkit (ie TWITTER) col for tool name/slug(ie TWITTER_BOOKMARKS_BY_USER) and description. Then can have agents with col linking to specific rows in the tools table. Then when getting the tools in composio.ts we can get the tools by their slug
-2. add more tool kit options (YT, reddit, etc)
 3. configure to give agents access to only specific tools. Dynamic tool loading via a small llm to select what is needed?
 4. model switching
 

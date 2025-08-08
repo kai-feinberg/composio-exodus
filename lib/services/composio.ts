@@ -1,4 +1,4 @@
-import { Composio } from '@composio/core';
+import { Composio, AuthScheme } from '@composio/core';
 import { VercelProvider } from '@composio/vercel';
 
 /**

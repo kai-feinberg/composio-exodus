@@ -88,6 +88,13 @@ export const getToolSpecificGuidance = (availableTools: string[]): string => {
 - When retrieving posts, focus on those with substantial selftext content
 - Respect Reddit's content and be mindful of context when summarizing posts`);
   }
+  if (toolkits.has('apify')) {
+    toolGuidance.push(`
+**Apify Tool Guidelines:**
+- use this actor to scrape youtube https://console.apify.com/actors/h7sDV53CddomktSi5/input
+- always run the run actor sync get dataset items tool to scrape the data
+`);
+  }
 
   if (toolkits.has('youtube')) {
     toolGuidance.push(`

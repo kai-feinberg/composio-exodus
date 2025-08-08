@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ConnectionCard } from './connection-card';
+import { ApiKeyModal } from './api-key-modal';
 import {
   Card,
   CardContent,
@@ -24,6 +25,7 @@ interface Toolkit {
   }>;
   isConnected: boolean;
   connectionId?: string;
+  auth_type?: 'oauth' | 'api_key';
 }
 
 interface ToolkitListProps {
@@ -34,6 +36,8 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
   const [toolkits, setToolkits] = useState<Toolkit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedToolkit, setSelectedToolkit] = useState<Toolkit | null>(null);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
   const fetchToolkits = async () => {
     try {
@@ -58,8 +62,60 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
   };
 
   const handleConnect = async (toolkit: Toolkit) => {
+    // Special handling for Apify - auto-connect with environment API key if available
+    if (toolkit.slug.toLowerCase() === 'apify') {
+      try {
+        const response = await fetch('/api/connections/auto-apify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          
+          // If environment key not found, fall back to manual API key entry
+          if (response.status === 400 && errorData?.error?.includes('APIFY_API_KEY not found')) {
+            setSelectedToolkit(toolkit);
+            setIsApiKeyModalOpen(true);
+            return;
+          }
+          
+          throw new Error(
+            errorData?.error || `Failed to connect to Apify: ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+        
+        if (data.isExisting) {
+          toast.info(`Apify connection already exists and is active`);
+        } else {
+          toast.success(`Successfully connected to Apify using environment API key!`);
+        }
+        
+        await fetchToolkits(); // Refresh the list
+        onConnectionChange?.();
+        return;
+      } catch (error) {
+        console.error('Failed to auto-connect Apify:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to connect to Apify'
+        );
+        return;
+      }
+    }
+
+    // Check if toolkit uses API key authentication
+    if (toolkit.auth_type === 'api_key') {
+      setSelectedToolkit(toolkit);
+      setIsApiKeyModalOpen(true);
+      return;
+    }
+
     try {
-      // Map toolkit slugs to their corresponding auth config IDs
+      // Map toolkit slugs to their corresponding auth config IDs for OAuth
       const authConfigMap: Record<string, string> = {
         youtube: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_YOUTUBE || '',
         twitter: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_TWITTER || '',
@@ -67,9 +123,6 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
         notion: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_NOTION || '',
         slack: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_SLACK || '',
         slackbot: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_SLACKBOT || '',
-        active_campaign:
-          process.env.NEXT_PUBLIC_COMPOSIO_AUTH_ACTIVE_CAMPAIGN || '',
-        exa: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_EXA || '',
         googledocs: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GOOGLEDOCS || '',
         gmail: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GMAIL || '',
         googledrive: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_GOOGLEDRIVE || '',
@@ -195,6 +248,63 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
     } catch (error) {
       console.error('Failed to connect:', error);
       toast.error(`Failed to connect to ${toolkit.name}`);
+    }
+  };
+
+  const handleApiKeyConnect = async (apiKey: string, apiUrl?: string) => {
+    if (!selectedToolkit) return;
+
+    try {
+      // Map toolkit slugs to their corresponding auth config IDs for API key
+      const authConfigMap: Record<string, string> = {
+        active_campaign: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_ACTIVE_CAMPAIGN || '',
+        apify: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_APIFY || '',
+        exa: process.env.NEXT_PUBLIC_COMPOSIO_AUTH_EXA || '',
+      };
+
+      const authConfigId = authConfigMap[selectedToolkit.slug];
+
+      if (!authConfigId) {
+        toast.error(
+          `No auth configuration found for ${selectedToolkit.name}. Please check your environment variables.`,
+        );
+        return;
+      }
+
+      // Connect using API key
+      const response = await fetch('/api/connections/api-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          authConfigId,
+          apiKey,
+          ...(apiUrl && { apiUrl }),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to connect: ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+
+      toast.success(`Successfully connected to ${selectedToolkit.name}!`);
+      await fetchToolkits(); // Refresh the list
+      onConnectionChange?.();
+
+    } catch (error) {
+      console.error('Failed to connect with API key:', error);
+      toast.error(
+        error instanceof Error 
+          ? error.message 
+          : `Failed to connect to ${selectedToolkit.name}`
+      );
+      throw error; // Re-throw so modal can handle the error state
     }
   };
 
@@ -366,6 +476,9 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
               <li>
                 <strong>EXA:</strong> Enhanced web search and content discovery
               </li>
+              <li>
+                <strong>Apify:</strong> Web scraping, automation, and data extraction from websites
+              </li>
             </ul>
             <p className="mt-4 text-sm">
               Your data is secure - we only access what you explicitly authorize
@@ -374,6 +487,17 @@ export function ToolkitList({ onConnectionChange }: ToolkitListProps) {
           </CardDescription>
         </CardContent>
       </Card>
+
+      {/* API Key Modal */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => {
+          setIsApiKeyModalOpen(false);
+          setSelectedToolkit(null);
+        }}
+        toolkit={selectedToolkit}
+        onConnect={handleApiKeyConnect}
+      />
     </div>
   );
 }

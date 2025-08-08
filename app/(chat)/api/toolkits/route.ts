@@ -40,6 +40,12 @@ const SUPPORTED_TOOLKITS = [
   'GOOGLEDRIVE',
 ];
 
+// Toolkits that use API key authentication instead of OAuth
+const API_KEY_TOOLKITS = new Set([
+  'ACTIVE_CAMPAIGN',
+  'EXA',
+]);
+
 export async function GET() {
   const session = await auth();
 
@@ -86,6 +92,7 @@ export async function GET() {
           categories: toolkit.meta?.categories,
           isConnected: !!connectionId,
           connectionId: connectionId || undefined,
+          auth_type: API_KEY_TOOLKITS.has(upperSlug) ? 'api_key' as const : 'oauth' as const,
         };
       } catch (error) {
         console.error(`Failed to fetch toolkit ${slug}:`, error);

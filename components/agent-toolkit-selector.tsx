@@ -194,7 +194,7 @@ export function AgentToolkitSelector({
         {filteredToolkits.map((toolkit) => (
           <div
             key={`${toolkit.toolkitSlug}`}
-            className="flex items-center justify-between py-2 px-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
+            className="flex items-center justify-between p-2 rounded border bg-card/50 hover:bg-muted/50 transition-colors w-full"
           >
             <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
               <h4 className="font-medium text-xs truncate flex-1">

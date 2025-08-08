@@ -13,17 +13,18 @@ const db = drizzle(client);
 
 // Toolkits to fetch tools from
 const TOOLKITS = [
-  'YOUTUBE',
-  'TWITTER',
-  'REDDIT',
-  'NOTION',
-  'SLACK',
-  'SLACKBOT',
-  'ACTIVE_CAMPAIGN',
-  'EXA',
-  'GOOGLEDOCS',
-  'GMAIL',
-  'GOOGLEDRIVE',
+  'APIFY',
+  // 'YOUTUBE',
+  // 'TWITTER',
+  // 'REDDIT',
+  // 'NOTION',
+  // 'SLACK',
+  // 'SLACKBOT',
+  // 'ACTIVE_CAMPAIGN',
+  // 'EXA',
+  // 'GOOGLEDOCS',
+  // 'GMAIL',
+  // 'GOOGLEDRIVE',
 ];
 
 interface ComposioTool {
@@ -45,49 +46,70 @@ async function fetchToolsFromComposio(): Promise<any[]> {
     try {
       console.log(`📦 Fetching tools for toolkit: ${toolkitSlug}`);
 
-      const response = await fetch(
-        `https://backend.composio.dev/api/v3/tools?toolkit_slug=${toolkitSlug}`,
-        {
+      let nextCursor: string | null = null;
+      let page = 1;
+      let toolkitToolCount = 0;
+
+      do {
+        // Build URL with cursor if available
+        let url = `https://backend.composio.dev/api/v3/tools?toolkit_slug=${toolkitSlug}`;
+        if (nextCursor) {
+          url += `&cursor=${nextCursor}`;
+        }
+
+        console.log(`📄 Fetching page ${page} for ${toolkitSlug}...`);
+
+        const response = await fetch(url, {
           method: 'GET',
           headers: {
             'x-api-key':
               process.env.COMPOSIO_API_KEY || 'ak_QcrzVvTEw8XLXoyxyMWj',
           },
-        },
-      );
+        });
 
-      if (!response.ok) {
-        console.error(
-          `❌ Failed to fetch tools for ${toolkitSlug}: ${response.status} ${response.statusText}`,
+        if (!response.ok) {
+          console.error(
+            `❌ Failed to fetch tools for ${toolkitSlug}: ${response.status} ${response.statusText}`,
+          );
+          break;
+        }
+
+        const body = await response.json();
+        const tools = body.items || [];
+
+        // Transform tools to our schema format
+        const transformedTools = tools.map((tool: ComposioTool) => ({
+          slug: tool.slug,
+          toolkitSlug: tool.toolkit.slug.toLowerCase(),
+          toolkitName: tool.toolkit.name,
+          displayName: tool.name,
+          description: tool.description,
+        }));
+
+        allTools.push(...transformedTools);
+        toolkitToolCount += transformedTools.length;
+
+        console.log(
+          `✅ Fetched ${transformedTools.length} tools from ${toolkitSlug} (page ${page})`,
         );
-        continue;
-      }
 
-      const body = await response.json();
-      const tools = body.items || [];
+        // Check for next page
+        nextCursor = body.next_cursor || null;
+        page++;
 
-      // Transform tools to our schema format
-      const transformedTools = tools.map((tool: ComposioTool) => ({
-        slug: tool.slug,
-        toolkitSlug: tool.toolkit.slug.toLowerCase(),
-        toolkitName: tool.toolkit.name,
-        displayName: tool.name,
-        description: tool.description,
-      }));
+        // Add a small delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } while (nextCursor);
 
-      allTools.push(...transformedTools);
       console.log(
-        `✅ Fetched ${transformedTools.length} tools from ${toolkitSlug}`,
+        `🎯 Total tools fetched for ${toolkitSlug}: ${toolkitToolCount}`,
       );
-
-      // Add a small delay to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 100));
     } catch (error) {
       console.error(`❌ Error fetching tools for ${toolkitSlug}:`, error);
     }
   }
 
-  console.log(`📊 Total tools fetched: ${allTools.length}`);
+  console.log(`📊 Total tools fetched across all toolkits: ${allTools.length}`);
   return allTools;
 }
 

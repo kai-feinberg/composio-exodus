@@ -18,6 +18,7 @@ interface Toolkit {
   }>;
   isConnected: boolean;
   connectionId?: string;
+  auth_type?: 'oauth' | 'api_key';
 }
 
 interface ConnectionCardProps {
